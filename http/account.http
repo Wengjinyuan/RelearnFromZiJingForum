@@ -1,0 +1,56 @@
+@baseUrl = http://localhost:80
+
+### 1. 注册；重复执行应返回 409
+POST {{baseUrl}}/api/accounts/register
+Content-Type: application/json
+
+{
+  "account": "demo_user",
+  "password": "Password123",
+  "email": "demo@example.com",
+  "mobile": "13800138000"
+}
+
+### 2. 登录；响应脚本把 Token 保存为 auth_token
+POST {{baseUrl}}/api/accounts/login
+Content-Type: application/json
+
+{
+  "account": "demo_user",
+  "password": "Password123"
+}
+
+> {%
+    client.global.set("auth_token", response.body.data.accessToken);
+%}
+
+### 3. 获取当前用户
+GET {{baseUrl}}/api/accounts/me
+Authorization: Bearer {{auth_token}}
+
+### 4. 修改密码；响应脚本用新 Token 覆盖 auth_token
+POST {{baseUrl}}/api/accounts/reset-password
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "Password123",
+  "newPassword": "NewPassword456"
+}
+
+> {%
+    client.global.set("auth_token", response.body.data.accessToken);
+%}
+
+### 5. 使用新 Token 再次读取当前用户
+GET {{baseUrl}}/api/accounts/me
+Authorization: Bearer {{auth_token}}
+
+### 6. 旧密码登录应返回 401
+POST {{baseUrl}}/api/accounts/login
+Content-Type: application/json
+
+{
+  "account": "demo_user",
+  "password": "Password123"
+}

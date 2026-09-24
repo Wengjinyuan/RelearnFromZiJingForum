@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: rebuilt-zijing-forum
+  jackson:
+    time-zone: Asia/Shanghai
+  datasource:
+    # 默认使用本地 H2 文件库，方便在 IDEA 中直接运行；生产/练习 MySQL 时启用 mysql profile。
+    url: jdbc:h2:file:./data/rebuilt-zijing-forum;MODE=MySQL;DATABASE_TO_LOWER=TRUE;AUTO_SERVER=TRUE
+    username: sa
+    # 本地 H2 数据库密码；IDEA Database 连接时也填写同一个值。
+    password: 123456
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+security:
+  jwt:
+    # 仅用于本地练习。部署时必须通过 ZIJING_JWT_SECRET 覆盖，长度至少 32 字节。
+    secret: ${ZIJING_JWT_SECRET:rebuilt-zijing-forum-local-development-key-change-me}
+    expiration-seconds: 7200
+
+server:
+  port: 80

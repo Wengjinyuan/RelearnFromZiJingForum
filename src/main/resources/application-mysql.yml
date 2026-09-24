@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: ${ZIJING_DB_URL:jdbc:mysql://localhost:3306/rebuilt_zijing_forum?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+    username: ${ZIJING_DB_USERNAME:root}
+    password: ${ZIJING_DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+
