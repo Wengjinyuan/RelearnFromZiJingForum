@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>紫荆论坛 · 关注动态</title>
+    <link rel="icon" type="image/x-icon" href="../img/zj_icon.ico">
+    <link rel="stylesheet" href="../css/common.css">
+    <style>
+        html {
+            overflow-y: scroll;
+        }
+
+        body {
+            background: linear-gradient(180deg, #fbf9ff 0, #ffffff 240px);
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+        .feed-page {
+            max-width: 980px;
+            margin: 24px auto 48px;
+            padding: 0 16px;
+        }
+
+        .feed-header {
+            background: linear-gradient(135deg, #f9f6ff, #ffffff);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 22px 28px;
+            margin-bottom: 2px;
+            box-shadow: 0 8px 24px rgba(103, 72, 193, 0.06);
+        }
+
+        .feed-header h2 {
+            color: #1e1e2a;
+            font-size: 26px;
+            line-height: 1.25;
+            margin-bottom: 8px;
+        }
+
+        .feed-header p {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .feed-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .post {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 14px;
+            margin-top: 16px;
+            cursor: pointer;
+            position: relative;
+            transition: box-shadow 0.2s, transform 0.1s;
+        }
+
+        .post:hover {
+            box-shadow: 0 8px 20px rgba(99, 70, 190, 0.08);
+        }
+
+        .own-post-card {
+            background: #fff;
+            border: 1px solid #ece8f6;
+            border-radius: 16px;
+            padding: 16px 18px;
+            box-shadow: 0 8px 24px rgba(37, 33, 55, 0.05);
+            overflow: hidden;
+            transition: box-shadow 0.2s, border-color 0.18s ease;
+        }
+
+        .own-post-card:hover {
+            border-color: rgba(123, 78, 246, 0.18);
+            box-shadow: 0 8px 20px rgba(99, 70, 190, 0.08);
+        }
+
+        .profile-post-body {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .profile-post-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .profile-post-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .profile-post-author img {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ece8f6;
+            box-shadow: 0 4px 12px rgba(37, 33, 55, 0.08);
+            flex: 0 0 auto;
+            cursor: pointer;
+        }
+
+        .profile-post-author .name {
+            color: #252337;
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            cursor: pointer;
+        }
+
+        .profile-post-author .name:hover {
+            color: var(--purple-600);
+        }
+
+        .profile-post-author .sub {
+            color: #8a8fa3;
+            font-size: 12px;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            display: inline-block;
+            background: linear-gradient(90deg, var(--purple-50), transparent);
+            color: var(--purple-600);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .tag.essence {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .normal-header {
+            margin-bottom: 0;
+        }
+
+        .own-post-card .post-title {
+            color: #202033;
+            font-size: 17px;
+            font-weight: 800;
+            line-height: 1.35;
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .own-post-card .post-title:hover {
+            color: var(--purple-600);
+        }
+
+        .own-post-card .post-preview {
+            color: #62667a;
+            font-size: 14px;
+            line-height: 1.65;
+            overflow-wrap: anywhere;
+            max-width: 100%;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .profile-post-thumb {
+            width: 112px;
+            height: 84px;
+            border-radius: 14px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f7f3ff, #fdfcff);
+            border: 1px solid #ece8f6;
+            flex-shrink: 0;
+        }
+
+        .profile-post-thumb .thumb-item {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+            border: 0;
+            border-radius: 0;
+            background: #f9f7ff;
+            cursor: pointer;
+        }
+
+        .post-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 14px;
+            padding-top: 8px;
+            border-top: 1px solid var(--line);
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .interact-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            color: var(--muted);
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+
+        .interact-item,
+        .btn-like,
+        .action-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            background: transparent;
+            border: 0;
+            padding: 0;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .interact-item:hover,
+        .btn-like:hover,
+        .action-item:hover {
+            color: var(--purple-600);
+        }
+
+        .btn-like.active {
+            color: #d23465;
+        }
+
+        .interact-item.favorite.active {
+            color: #ef9f21;
+        }
+
+        .interact-item svg,
+        .btn-like svg,
+        .action-item svg {
+            width: 16px;
+            height: 16px;
+            display: block;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 16px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .action-item.detail {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #f8f5ff;
+            color: var(--purple-600);
+            font-weight: 700;
+        }
+
+        .empty-state,
+        .loading-state {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 54px 20px;
+            margin-top: 16px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-state svg,
+        .loading-state svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            stroke: currentColor;
+        }
+
+        .empty-title {
+            color: #2c2e3a;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .empty-desc {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .load-more {
+            text-align: center;
+            color: var(--purple-600);
+            font-size: 14px;
+            font-weight: 700;
+            padding: 18px 0 6px;
+            cursor: pointer;
+        }
+
+        .load-more:hover {
+            color: var(--purple-500);
+        }
+
+        .back-top-btn {
+            position: fixed;
+            right: 36px;
+            bottom: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            color: #fff;
+            border: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(12px);
+            transition: all 0.2s ease;
+            z-index: 40;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .back-top-btn.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 680px) {
+            .feed-page {
+                margin-top: 16px;
+            }
+
+            .feed-header {
+                padding: 18px 16px;
+            }
+
+            .feed-header h2 {
+                font-size: 22px;
+            }
+
+            .own-post-card {
+                padding: 15px 14px;
+            }
+
+            .profile-post-body {
+                flex-direction: column;
+            }
+
+            .profile-post-thumb {
+                width: 100%;
+                height: 150px;
+            }
+
+            .own-post-card .post-title {
+                white-space: normal;
+            }
+
+            .post-footer {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .back-top-btn {
+                right: 18px;
+                bottom: 18px;
+            }
+        }
+    </style>
+    <script src="../js/vue.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script src="../js/axios-config.js"></script>
+</head>
+
+<body>
+    <div id="topbar-container"></div>
+    <div id="app" class="feed-page">
+        <section class="feed-header">
+            <h2>关注动态</h2>
+            <p>按发布时间查看你关注的人最近发布的帖子。</p>
+        </section>
+
+        <section v-if="loading && posts.length === 0" class="loading-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+                <path d="M12 3a9 9 0 1 0 9 9" stroke-linecap="round"></path>
+            </svg>
+            <div class="empty-title">正在加载动态</div>
+            <div class="empty-desc">正在获取关注用户发布的帖子。</div>
+        </section>
+
+        <section v-else-if="sortedPosts.length" class="feed-list">
+            <article v-for="post in sortedPosts" :key="post.id" class="post own-post-card">
+                <div class="profile-post-body">
+                    <div class="profile-post-main">
+                        <div class="meta profile-post-author">
+                            <img
+                                :src="resolveAvatarUrl(post.avatar)"
+                                alt="用户头像"
+                                loading="lazy"
+                                @click.stop="viewUserProfile(post.userId)"
+                                @error="handleAvatarError"
+                            >
+                            <div>
+                                <div class="name" @click.stop="viewUserProfile(post.userId)">
+                                    {{ post.username || '匿名用户' }}
+                                    <span v-if="post.category" class="tag">{{ post.category }}</span>
+                                    <span v-if="Number(post.isEssence) === 1" class="tag essence">精华</span>
+                                </div>
+                                <div class="sub">
+                                    <span>发布了新帖子</span>
+                                    <span>{{ formatTimeAgo(post.createTime) }}</span>
+                                    <span>浏览 {{ formatNumber(post.viewCount) }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="normal-header">
+                            <div class="post-title" @click.stop="viewPostDetail(post)">
+                                {{ post.title || '未命名帖子' }}
+                            </div>
+                            <div class="post-preview" @click.stop="viewPostDetail(post)">
+                                {{ formatPostSummary(post.summary || post.content) }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="getPostCover(post)" class="thumbs profile-post-thumb">
+                        <img
+                            :src="getPostCover(post)"
+                            class="thumb-item"
+                            alt="帖子图片"
+                            loading="lazy"
+                            @click.stop="viewPostDetail(post)"
+                            @error="hideBrokenImage"
+                        >
+                    </div>
+                </div>
+
+                <div class="post-footer">
+                    <div class="interact-group">
+                        <button class="btn-like" :class="{ active: post.liked }" @click.stop="toggleLike(post)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 1 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6z"></path>
+                            </svg>
+                            <span>{{ formatNumber(post.likeCount) }}</span>
+                        </button>
+                        <button class="interact-item" @click.stop="showComments(post)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+                            </svg>
+                            <span>{{ formatNumber(post.commentCount) }}</span>
+                        </button>
+                        <button class="interact-item favorite" :class="{ active: post.favorited }" @click.stop="toggleFavorite(post)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M12 17.3 18.2 21l-1.6-7.1L22 9.1l-7.2-.6L12 2 9.2 8.5 2 9.1l5.4 4.8L5.8 21z"></path>
+                            </svg>
+                            <span>{{ formatNumber(post.favoriteCount) }}</span>
+                        </button>
+                    </div>
+                    <div class="action-group">
+                        <button class="action-item detail" @click.stop="viewPostDetail(post)">
+                            详情
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M5 12h14"></path>
+                                <path d="m13 6 6 6-6 6"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </article>
+
+            <div v-if="hasNext" class="load-more" @click="loadMore">
+                {{ loading ? '加载中...' : '加载更多动态' }}
+            </div>
+            <div v-else class="load-more">已经看到最新了</div>
+        </section>
+
+        <section v-else class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+                <path d="M22 12h-4l-3 8L9 4l-3 8H2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <div class="empty-title">暂无关注动态</div>
+            <div class="empty-desc">关注一些用户后，他们发布的新帖子会出现在这里。</div>
+        </section>
+
+        <button class="back-top-btn" :class="{ show: showBackTop }" @click="scrollToTop">↑</button>
+    </div>
+
+    <script src="../components/TopBar.js"></script>
+    <script>
+        new Vue({ el: '#topbar-container', template: '<top-bar></top-bar>' });
+    </script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                posts: [],
+                loading: false,
+                currentPage: 1,
+                pageSize: 10,
+                hasNext: true,
+                showBackTop: false,
+                defaultAvatar: '../img/头像示例.jpg'
+            },
+            computed: {
+                sortedPosts() {
+                    return this.posts.slice().sort((a, b) => {
+                        const bTime = new Date(b.createTime || 0).getTime() || 0;
+                        const aTime = new Date(a.createTime || 0).getTime() || 0;
+                        return bTime - aTime;
+                    });
+                }
+            },
+            mounted() {
+                this.loadFeed(true);
+                window.addEventListener('scroll', this.handleScroll);
+            },
+            beforeDestroy() {
+                window.removeEventListener('scroll', this.handleScroll);
+            },
+            methods: {
+                loadFeed(reset) {
+                    if (this.loading) return;
+                    if (reset) {
+                        this.currentPage = 1;
+                        this.posts = [];
+                        this.hasNext = true;
+                    }
+                    this.loading = true;
+                    axios.get('/api/user/follow/feed', {
+                        params: {
+                            page: this.currentPage,
+                            size: this.pageSize
+                        }
+                    }).then(response => {
+                        const page = this.normalizePage(response.data);
+                        const records = Array.isArray(page.records) ? page.records : [];
+                        const normalized = records.map(this.normalizePost);
+                        this.posts = reset ? normalized : this.posts.concat(normalized);
+                        this.hasNext = page.hasNext === true;
+                        this.currentPage = Number(page.current || this.currentPage) + 1;
+                    }).catch(error => {
+                        console.error('加载关注动态失败:', error);
+                        this.hasNext = false;
+                    }).finally(() => {
+                        this.loading = false;
+                    });
+                },
+                normalizePage(payload) {
+                    if (payload && payload.data && Array.isArray(payload.data.records)) {
+                        return payload.data;
+                    }
+                    return payload || {};
+                },
+                normalizePost(post) {
+                    return Object.assign({
+                        likeCount: 0,
+                        commentCount: 0,
+                        favoriteCount: 0,
+                        viewCount: 0,
+                        liked: false,
+                        favorited: false
+                    }, post || {});
+                },
+                loadMore() {
+                    if (!this.hasNext || this.loading) return;
+                    this.loadFeed(false);
+                },
+                formatPostSummary(summary) {
+                    const text = String(summary || '')
+                        .replace(/<[^>]*>/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                    if (!text) return '这个帖子暂时没有摘要，点进去看看完整内容吧。';
+                    return text.length > 180 ? `${text.slice(0, 180)}...` : text;
+                },
+                getFirstContentImage(post) {
+                    const fields = [post.content, post.htmlContent, post.body, post.detail, post.summary];
+                    for (const value of fields) {
+                        const text = String(value || '');
+                        const htmlMatch = text.match(/<img[^>]+src=["']([^"']+)["']/i);
+                        if (htmlMatch && htmlMatch[1]) return htmlMatch[1];
+                        const mdMatch = text.match(/!\[[^\]]*]\(([^)]+)\)/);
+                        if (mdMatch && mdMatch[1]) return mdMatch[1];
+                    }
+                    return '';
+                },
+                getPostCover(post) {
+                    const images = Array.isArray(post.images) ? post.images : [];
+                    const cover = post.image || post.cover || post.coverImage || images[0] || this.getFirstContentImage(post);
+                    return cover ? this.resolveAvatarUrl(cover) : '';
+                },
+                resolveAvatarUrl(url) {
+                    if (!url) return this.defaultAvatar;
+                    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+                        return url;
+                    }
+                    if (url.startsWith('/')) return url;
+                    return url;
+                },
+                handleAvatarError(event) {
+                    event.target.src = this.defaultAvatar;
+                },
+                hideBrokenImage(event) {
+                    event.target.style.display = 'none';
+                },
+                formatTimeAgo(dateTime) {
+                    if (!dateTime) return '刚刚';
+                    const targetTime = new Date(dateTime);
+                    if (Number.isNaN(targetTime.getTime())) return dateTime;
+                    const now = new Date();
+                    const diffMinutes = Math.floor((now - targetTime) / 60000);
+                    if (diffMinutes < 1) return '刚刚';
+                    if (diffMinutes < 60) return `${diffMinutes}分钟前`;
+                    const diffHours = Math.floor(diffMinutes / 60);
+                    if (diffHours < 24) return `${diffHours}小时前`;
+                    const diffDays = Math.floor(diffHours / 24);
+                    if (diffDays === 1) return '昨天';
+                    if (diffDays === 2) return '前天';
+                    const month = String(targetTime.getMonth() + 1).padStart(2, '0');
+                    const day = String(targetTime.getDate()).padStart(2, '0');
+                    if (targetTime.getFullYear() === now.getFullYear()) return `${month}-${day}`;
+                    return `${targetTime.getFullYear()}-${month}-${day}`;
+                },
+                formatNumber(num) {
+                    const value = Number(num) || 0;
+                    if (value >= 10000) return `${(value / 10000).toFixed(1)}w`;
+                    return String(value);
+                },
+                toggleLike(post) {
+                    post.liked = !post.liked;
+                    post.likeCount = Math.max((Number(post.likeCount) || 0) + (post.liked ? 1 : -1), 0);
+                },
+                toggleFavorite(post) {
+                    post.favorited = !post.favorited;
+                    post.favoriteCount = Math.max((Number(post.favoriteCount) || 0) + (post.favorited ? 1 : -1), 0);
+                },
+                showComments(post) {
+                    const id = post && post.id ? post.id : post;
+                    if (!id) return;
+                    window.location.href = `../post/detail.html?postId=${id}#comments`;
+                },
+                viewPostDetail(post) {
+                    const id = post && post.id ? post.id : post;
+                    if (!id) return;
+                    window.location.href = `../post/detail.html?postId=${id}`;
+                },
+                viewUserProfile(userId) {
+                    if (!userId) return;
+                    window.location.href = `profile.html?userId=${userId}`;
+                },
+                handleScroll() {
+                    this.showBackTop = window.scrollY > 240;
+                    const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 420;
+                    if (nearBottom && this.hasNext && !this.loading) {
+                        this.loadMore();
+                    }
+                },
+                scrollToTop() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

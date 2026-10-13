@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>帖子不见了 · 紫荆论坛</title>
+    <link rel="icon" type="image/x-icon" href="img/zj_icon.ico">
+    <link rel="stylesheet" href="./css/common.css">
+    <style>
+        /* 404 页面专用微调 – 保持与主站风格浑然一体 */
+        .error-container {
+            max-width: 1180px;
+            margin: 40px auto 80px;
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+
+
+        .error-illustration {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            overflow: hidden;
+
+        }
+
+
+        .error-illustration-img {
+
+            width: 512px;
+            height: 512px;
+
+        }
+
+        .error-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e1e2a;
+            margin-bottom: 12px;
+        }
+
+        .error-desc {
+            font-size: 15px;
+            color: var(--muted);
+            line-height: 1.5;
+            max-width: 480px;
+            margin: 0 auto 28px auto;
+        }
+
+        .action-group-404 {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+            margin: 24px 0 20px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--line);
+            padding: 12px 28px;
+            border-radius: 40px;
+            color: var(--purple-600);
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-outline:hover {
+            background: var(--purple-50);
+            border-color: var(--purple-200);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 640px) {
+
+            .error-code {
+                font-size: 68px;
+            }
+
+            .error-title {
+                font-size: 24px;
+            }
+
+            .action-group-404 {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn-primary,
+            .btn-outline {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 顶栏组件 (复用论坛统一顶栏) -->
+    <div id="topbar-container"></div>
+
+    <div id="app-error">
+        <div class="error-container">
+            <div class="error-card">
+                <!-- 温和的插画风格 沿用紫荆视觉 -->
+                <div class="error-illustration">
+                    <img class="error-illustration-img" src="./img/404.png">
+                </div>
+                <div class="error-title">啊噢，帖子不见了...</div>
+                <div class="error-desc">
+                    您访问的帖子可能已被删除或隐藏，或者链接存在错误。<br>
+                    紫荆树下总有新的故事，去逛逛其他话题吧。
+                </div>
+
+                <div class="action-group-404">
+                    <button class="btn-primary" @click="goHome">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 9L12 3L21 9V20H15V14H9V20H3V9Z" stroke="white" stroke-width="1.6"
+                                stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                            <path d="M9 20H3V9L12 3L21 9V20H15" stroke="white" stroke-width="1.6" fill="none" />
+                        </svg>
+                        返回首页
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入Vue & 顶栏组件 (跟原论坛结构一致) -->
+    <script src="./js/vue.js"></script>
+    <script src="./components/TopBar.js"></script>
+    <script>
+        // ---------- 顶栏实例 (与index完全一致，保持风格统一) ----------
+        new Vue({
+            el: '#topbar-container',
+            template: '<top-bar></top-bar>',
+            data: {
+                userData: {
+                    isLogin: true,
+                    userName: '林奈_Official',
+                    userId: '327620255',
+                    userBio: '热爱记录瞬间 · 常出没于图书馆和社团',
+                    avatarUrl: './img/头像示例.jpg',
+                    followerCount: 1247,
+                    followingCount: 248,
+                    myPostCount: 86,
+                    messageCount: 3,
+                    notificationCount: 5
+                }
+            }
+        });
+
+        // 404页面逻辑 —— 轻量交互 + 模拟真实论坛行为（可跳转）
+        new Vue({
+            el: '#app-error',
+            data: {
+                searchKeyword: '',
+                recommendTopics: ['春季社团招新', '考研经验贴合集', '二手iPad交易', '图书馆攻略', '校庆活动预告']
+            },
+            methods: {
+                goHome() {
+                    // 回到论坛主页，相对路径确保与现有结构一致
+                    window.location.href = './index.html';
+                },
+                handleRedirectSearch() {
+                    if (!this.searchKeyword.trim()) {
+                        this.showFriendlyToast('输入点关键词再搜索吧～');
+                        return;
+                    }
+                    // 模拟搜索跳转（实际可对接 search 页面，这里保持风格一致，弹窗提示+跳转到首页并携带搜索参数）
+                    // 为了体现完整交互，简单跳转到首页并hash标识（真实场景可跳转搜索结果页）
+                    // 沿用论坛已有逻辑，也可跳转到index页面并让用户看到搜索结果（为了体验，跳转并提示）
+                    const keyword = encodeURIComponent(this.searchKeyword.trim());
+                    // 由于原index搜索框未实现完整全局搜索，此处跳转首页后alert提示，同时保留原风格友好
+                    window.location.href = `./index.html?search=${keyword}`;
+                },
+                goToTopic(topicName) {
+                    // 跳转首页并模拟点击热门话题搜索（论坛原有searchTopic方法行为）
+                    // 将关键词传递给index页面，或者打开首页后触发搜索提示
+                    // 根据原index页面设计，首页有searchTopic方法并alert展示，但更好体验为跳转并筛选。
+                    window.location.href = `./index.html?topic=${encodeURIComponent(topicName)}`;
+                },
+                goToCategory(category) {
+                    // 跳转到首页并激活指定板块
+                    window.location.href = `./index.html?category=${encodeURIComponent(category)}`;
+                },
+                showFriendlyToast(msg) {
+                    // 简单提示（沿用全局toast风格但轻量）
+                    const toast = document.createElement('div');
+                    toast.className = 'global-toast show';
+                    toast.innerText = msg;
+                    document.body.appendChild(toast);
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                        setTimeout(() => toast.remove(), 300);
+                    }, 2000);
+                }
+            },
+            mounted() {
+                // 模拟控制台可输出友好日志，并不干扰体验
+                console.log('404 页面已加载 - 紫荆论坛风格');
+                // 如果有URL参数，可选处理: 但保留原汁原味
+            }
+        });
+    </script>
+
+    <!-- 补充一个备用的全局toast样式（common.css中已有 .global-toast，但为保证完全一致，不用额外添加） -->
+    <!-- 确保所有svg和组件完整 -->
+</body>
+
+</html>

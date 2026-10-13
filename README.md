@@ -7,7 +7,7 @@
 1. `File -> Open`，选择 `E:\REBUILTZIJINGFORUM\pom.xml`。
 2. Project SDK 选择 JDK 17 或更高版本；Maven 编译目标固定为 Java 17。
 3. 等 Maven 同步完成，运行 `RebuiltZijingForumApplication`。
-4. 浏览器访问 `http://localhost:8080/api/health` 和 `http://localhost:8080/api/features`。
+4. 浏览器访问 `http://localhost/api/health` 和 `http://localhost/api/features`（默认端口在 `application.yml` 中是 80）。
 5. 运行 `BaselineApiTest`，确认工程基线通过。
 
 命令行也可以执行：
@@ -17,27 +17,35 @@ mvn test
 mvn spring-boot:run
 ```
 
+## 前端与 H2 演示数据
+
+原项目的 `frontend/html` 页面已复制到 `src/main/resources/static`，由 Spring Boot 直接提供。启动后打开 `http://localhost/`；若使用 `--server.port=18080`，改为 `http://localhost:18080/`。不需要另起 Nginx。前端 `js/axios-config.js` 把原页面的旧接口路径与响应格式转换为本工程的 `/api/...` 接口。
+
+默认仍使用文件型 H2：`./data/rebuilt-zijing-forum`。第一次启动会补充三个演示账号、四篇帖子、一条评论、一条关注关系和一条通知；后续启动按账号和帖子标题检查，不会重复生成，也不会清空已有练习数据。演示账号为 `demo_alice`、`demo_bob`、`demo_admin`，密码均为 `Demo12345`。管理员账号只用于本地练习。可通过 `forum.demo-data.enabled=false` 关闭自动补充；`mysql` profile 已默认关闭它。
+
+建议先打开首页查看帖子，再用 `demo_alice` 登录测试发帖、评论、关注。原项目部分页面含有与当前后端尚不完全对应的功能，例如富文本图片上传；这些操作仍需后续实现相应的后端接口。
+
 ## 包与功能一一对应
 
 | 顺序 | 功能包 | 目标功能 | 包内指导 |
 | --- | --- | --- | --- |
-| 1 | `account` | F01 账号与鉴权 | `account/GUIDE.md` |
-| 2 | `profile` | F02 资料与头像 | `profile/GUIDE.md` |
-| 3 | `post` | F03 帖子与标签 | `post/GUIDE.md` |
-| 4 | `comment` | F04 评论与回复 | `comment/GUIDE.md` |
-| 5 | `interaction` | F05 点赞收藏浏览 | `interaction/GUIDE.md` |
-| 6 | `follow` | F06 关注与关注流 | `follow/GUIDE.md` |
-| 7 | `home` | F09 首页与热门标签 | `home/GUIDE.md` |
-| 8 | `notification` | F07 通知中心 | `notification/GUIDE.md` |
-| 9 | `search` | F08 搜索 | `search/GUIDE.md` |
-| 10 | `admin` | F11 后台治理 | `admin/GUIDE.md` |
-| 11 | `message` | F10 私信 | `message/GUIDE.md` |
+| 1 | `f01_account` | F01 账号与鉴权 | `f01_account/GUIDE.md` |
+| 2 | `f02_profile` | F02 资料与头像 | `f02_profile/GUIDE.md` |
+| 3 | `f03_post` | F03 帖子与标签 | `f03_post/GUIDE.md` |
+| 4 | `f04_comment` | F04 评论与回复 | `f04_comment/GUIDE.md` |
+| 5 | `f05_interaction` | F05 点赞收藏浏览 | `f05_interaction/GUIDE.md` |
+| 6 | `f06_follow` | F06 关注与关注流 | `f06_follow/GUIDE.md` |
+| 7 | `f07_notification` | F07 通知中心 | `f07_notification/GUIDE.md` |
+| 8 | `f08_search` | F08 搜索 | `f08_search/GUIDE.md` |
+| 9 | `f09_home` | F09 首页与热门标签 | `f09_home/GUIDE.md` |
+| 10 | `f10_message` | F10 私信 | `f10_message/GUIDE.md` |
+| 11 | `f11_admin` | F11 后台治理 | `f11_admin/GUIDE.md` |
 
-这里的顺序故意按技术依赖排列，因此编号不是连续的。
+功能根包使用 `f01_` 到 `f11_` 前缀，IDEA 按名称展示时就是建议实现顺序。
 
 ## 每个功能包内部的固定结构
 
-第一次看这些名称时，先读 [Java 包与文件类型说明](docs/01-Java包与文件类型说明.md)。项目统一采用常见的 `Controller、DTO、VO、Service、ServiceImpl、Mapper、Entity` 命名，不再引入 Repository、Gateway、Row、Session、View、Request 等额外名称。
+第一次看这些名称时，先读 [Java 包与文件类型说明](docs/01-Java包与文件类型说明.md)。F01–F03 使用以 MyBatis-Plus 为主的分层示例；F04–F11 为了把 SQL 每一部分直接展示给初学者，使用 `Controller → Service 接口 → ServiceImpl → Mapper(JdbcTemplate) → MySQL/H2`，并分别放置 DTO、VO、Entity。后者的一些模型用 Java `record` 表达，以实际代码为准。
 
 开始某个功能时，在对应包中按下面结构创建代码：
 
@@ -56,7 +64,7 @@ feature/
 └─ GUIDE.md          该功能的一对一复现手册
 ```
 
-调用方向固定为 `Controller -> Service -> ServiceImpl -> Mapper -> MySQL`，DTO 负责输入，VO 负责输出，Entity 只用于数据库映射。
+调用方向固定为 `前端 -> 拦截器（需登录时）-> Controller -> DTO -> Service 接口/ServiceImpl -> Mapper -> MySQL`；查询再由 Entity 转 VO 返回前端。F04–F11 已拆分业务接口和 `impl/` 实现。
 
 ## 复现纪律
 
@@ -68,6 +76,12 @@ feature/
 
 ## 当前已完成与未完成
 
-已完成：Maven 基线、统一响应、统一异常、健康检查、11 个功能包、功能目录接口、基线测试、每包指导文档，以及 F01 account 的注册、登录、JWT 鉴权、当前用户和修改密码完整样例。
+已完成：Maven 基线、统一响应与异常、健康检查、F01–F03 基础功能，以及 F04–F11 的 MySQL/H2 同步版接口、分包 DTO/VO/Entity/ServiceImpl/Mapper、调用链注释和跨功能测试。F04 评论图片地址、批量回复预览和软删除时间已实现；F10 另有 SSE 单向推送。初学者先读 [F04–F11 从前端到数据库](docs/F04-F11-从前端到数据库.md)，再按 Controller → ServiceImpl → Mapper 阅读。
 
-未完成：F02-F11 的数据库表、业务类和中间件接入。这些内容就是你照着 account 样例按包练习的主体；各 `GUIDE.md` 已给出类创建顺序、约束、接口和验收条件。
+可选进阶代码：打开 `forum.redis.enabled` 后，F07 未读数与 F09 首页使用 Redis 快照/短锁；打开 `forum.rabbit.enabled` 后，F07 使用 Outbox + RabbitMQ 生产/消费/死信队列；打开 `forum.search.elasticsearch.enabled` 后，F08 使用 ES 索引、事务提交后增量同步和 MySQL 降级。搜索结果已有安全的完整关键词高亮。默认外部服务全部关闭，未拿真实 Redis/RabbitMQ/Elasticsearch 联调。原前端已搬入并接通常用流程，富文本图片上传等尚未接通。仍未完成：图片上传、F05 Redis 异步计数、F08 持久 MQ 索引事件/ES 原生分词高亮、F10 图片私信和跨实例推送。F03 新帖默认发布，F11 虽有审核接口但尚无默认待审核工作流。
+
+旧库升级：H2 启动时会自动补 F04 新增的 `image_urls/deleted_at`；已有旧版 MySQL 表时，先检查字段，再手动执行一次 [MySQL 迁移脚本](src/main/resources/migration-mysql-20261008.sql)。不要直接删除已有练习数据。
+
+本地 `mvn test` 使用 H2；MySQL profile 使用独立的 `schema-mysql.sql`，但本轮尚未连接真实 MySQL 做运行验证。
+
+F11 管理端需要先有 `ADMIN` 账号。仅在**自己的练习数据库**里，先通过注册接口创建账号，再用数据库工具执行 `UPDATE user_account SET role='ADMIN', token_version=token_version+1 WHERE account='你的练习账号';`，然后重新登录取得带管理员角色的新 Token。不要在公开部署环境开放这样的手工提权流程。

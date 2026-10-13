@@ -1,0 +1,1715 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>紫荆论坛 · 个人主页</title>
+    <link rel="icon" type="image/x-icon" href="../img/zj_icon.ico">
+    <link rel="stylesheet" href="../css/common.css">
+    <style>
+        html {
+            overflow-y: scroll;
+        }
+
+        /* ========= 个人资料横幅卡片 ========= */
+        .profile-banner-card {
+            max-width: 1180px;
+            margin: 18px auto 0;
+            padding: 0 16px;
+        }
+
+        .profile-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            box-shadow: 0 6px 18px rgba(99, 70, 190, 0.03);
+        }
+
+        .profile-header {
+            display: flex;
+            gap: 24px;
+        }
+
+        .profile-avatar-lg {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid var(--purple-100);
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(106, 59, 224, 0.08);
+        }
+
+        .profile-avatar-lg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-info-main {
+            flex: 1;
+            min-width: 240px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+        }
+
+        .profile-name-line {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .profile-display-name {
+            font-size: 24px;
+            color: #1e1e2a;
+        }
+
+        .profile-badge {
+            background: linear-gradient(90deg, var(--purple-50), rgba(123, 78, 246, 0.08));
+            color: var(--purple-600);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid var(--purple-200);
+        }
+
+        .profile-id-badge {
+            background: #f5f3ff;
+            color: var(--muted);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-family: monospace;
+        }
+
+        .profile-meta-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .profile-meta-row span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .profile-field-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px 14px;
+            margin: 10px 0 12px;
+            max-width: 720px;
+        }
+
+        .profile-field-item {
+            min-width: 0;
+            padding: 9px 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fbfaff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .profile-field-label {
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .profile-field-value {
+            color: #1e1e2a;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+
+
+        .profile-action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+
+
+        .btn-profile {
+            border: 1px solid var(--line);
+            background: #fff;
+            padding: 8px 20px;
+            border-radius: 24px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #1e1e2a;
+            cursor: pointer;
+            gap: 6px;
+            transition: all 0.2s;
+            width: 120px;
+            height: 40px;
+        }
+
+        .btn-profile:hover {
+            background: var(--purple-50);
+            border-color: var(--purple-300);
+            color: var(--purple-600);
+        }
+
+        .btn-profile-primary {
+            padding: 12px 26px;
+            border-radius: 28px;
+            font-weight: 800;
+            font-size: 18px;
+            cursor: pointer;
+            gap: 6px;
+            transition: all 0.2s;
+            width: 180px;
+            height: 56px;
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            border: none;
+            color: #fff;
+            box-shadow: 0 12px 26px rgba(123, 78, 246, 0.24);
+        }
+
+        .btn-profile-primary:hover {
+            opacity: 0.94;
+            transform: translateY(-1px);
+        }
+
+        .btn-profile-primary.followed {
+            background: #eef0f6;
+            color: #7d8296;
+            box-shadow: none;
+            border: 1px solid var(--line);
+            cursor: default;
+        }
+
+        .btn-profile-primary.followed:hover {
+            opacity: 1;
+            transform: none;
+        }
+
+        .profile-stats-row {
+            display: flex;
+            gap: 32px;
+        }
+
+        .profile-stat-item {
+            display: flex;
+            cursor: pointer;
+            transition: color 0.2s;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .profile-stat-item:hover {
+            color: var(--purple-600);
+        }
+
+        .profile-stat-number {
+            font-weight: 700;
+            font-size: 18px;
+            color: #1e1e2a;
+            line-height: 1.3;
+        }
+
+        .profile-stat-label {
+            font-size: 13px;
+            color: var(--muted);
+            letter-spacing: 0.3px;
+        }
+
+        /* ========= 双列布局 ========= */
+        .profile-layout {
+            max-width: 1180px;
+            margin: 18px auto;
+            display: flex;
+            gap: 18px;
+            padding: 0 16px;
+            align-items: flex-start;
+        }
+
+        .profile-left-col {
+            flex: 1 1 68%;
+        }
+
+        .profile-right-col {
+            flex: 0 0 320px;
+        }
+
+        /* ========= 选项卡 ========= */
+        /* ========= 新版筛选区 ========= */
+        .filter-combined {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 12px 12px 10px 12px;
+            margin-bottom: 16px;
+        }
+
+        /* 第一行：板块categorys */
+        .categorys-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 12px;
+
+        }
+
+        .categorys-row button {
+            border: 0;
+            background: transparent;
+            padding: 8px 16px;
+            border-radius: 24px;
+            color: var(--muted);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-size: 14px;
+            display: flex;
+            gap: 8px;
+            align-items: baseline;
+        }
+
+        .categorys-row button.active {
+            color: var(--purple-600);
+            background: linear-gradient(90deg, var(--purple-50), rgba(123, 78, 246, 0.08));
+            box-shadow: inset 0 0 0 1px rgba(123, 78, 246, 0.2);
+        }
+
+
+        /* 精华标签激活状态（组合精华和激活样式） */
+        .categorys-row button.essence.active {
+            background: linear-gradient(90deg, #fef2f2, #ffe3e3);
+            color: #dc2626;
+            box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.15);
+        }
+
+        /* 第二行：筛选组+排序 */
+        .filter-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-group button {
+            border: 1px solid var(--line);
+            background: #fff;
+            padding: 6px 16px;
+            border-radius: 24px;
+            cursor: pointer;
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .filter-group button.active {
+            border: none;
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            color: #fff;
+            box-shadow: var(--shadow);
+        }
+
+        .sort select {
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 6px 12px;
+            background: #fff;
+            font-size: 13px;
+            color: #2c2e3a;
+            cursor: pointer;
+        }
+
+
+        /* ========= 帖子卡片 ========= */
+        .user-post-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .user-post-item {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 16px;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+
+        .user-post-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .post-meta-row {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .post-meta-row img {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--line);
+        }
+
+        .post-author-info {
+            flex: 1;
+        }
+
+        .post-author-name {
+            font-weight: 700;
+            font-size: 14px;
+            color: #1e1e2a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .post-tag-label {
+            display: inline-block;
+            background: linear-gradient(90deg, var(--purple-50), transparent);
+            color: var(--purple-600);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .post-sub-info {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .post-text-content {
+            color: #5a5e73;
+            line-height: 1.6;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .own-post-card {
+            background: #fff;
+            border: 1px solid #ece8f6;
+            border-radius: 16px;
+            padding: 16px 18px;
+            box-shadow: 0 8px 24px rgba(37, 33, 55, 0.05);
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .own-post-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(126, 87, 194, 0.24);
+            box-shadow: 0 14px 32px rgba(37, 33, 55, 0.09);
+        }
+
+        .profile-post-body {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 112px;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .profile-post-main {
+            min-width: 0;
+        }
+
+        .profile-post-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .profile-post-author img {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ece8f6;
+            box-shadow: 0 4px 12px rgba(37, 33, 55, 0.08);
+            flex: 0 0 auto;
+        }
+
+        .profile-post-author .name {
+            color: #252337;
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .profile-post-author .sub {
+            color: #8a8fa3;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .normal-header {
+            margin-bottom: 0;
+        }
+
+        .own-post-kicker {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+            color: #8a8fa3;
+            font-size: 12px;
+        }
+
+        .post-title {
+            color: #202033;
+            font-size: 17px;
+            font-weight: 800;
+            line-height: 1.35;
+            margin-bottom: 8px;
+            letter-spacing: 0.01em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .post-preview {
+            color: #62667a;
+            font-size: 14px;
+            line-height: 1.65;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            overflow-wrap: anywhere;
+            max-width: 100%;
+        }
+
+        .post-image-grid {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .post-thumb-img {
+            width: 100px;
+            height: 80px;
+            border-radius: 6px;
+            border: 1px solid #f0ecf9;
+            object-fit: cover;
+            background: #f9f7ff;
+        }
+
+        .profile-post-thumb {
+            width: 112px;
+            height: 84px;
+            border-radius: 14px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f7f3ff, #fdfcff);
+            border: 1px solid #ece8f6;
+            align-self: stretch;
+        }
+
+        .profile-post-thumb .thumb-item {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+        }
+
+        .post-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #f0edf7;
+            color: #8a8fa3;
+            font-size: 13px;
+        }
+
+        .interact-group,
+        .action-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .btn-like,
+        .interact-item,
+        .action-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            min-height: 24px;
+            color: #8a8fa3;
+            background: transparent;
+            border: 0;
+            padding: 0;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .btn-like.active,
+        .btn-like:hover,
+        .interact-item:hover,
+        .action-item:hover {
+            color: var(--purple-600);
+        }
+
+        .action-item {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #f8f5ff;
+            color: var(--purple-600);
+            font-weight: 700;
+        }
+
+        .more-indicator {
+            width: 100px;
+            height: 80px;
+            background: linear-gradient(90deg, var(--purple-50), #f0e9ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            color: var(--purple-600);
+            font-weight: 700;
+            font-size: 14px;
+            border: 1px dashed var(--purple-200);
+        }
+
+        .post-footer-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px solid var(--line);
+        }
+
+        .post-interact-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .post-interact-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            font-size: 13px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+
+        .post-interact-item:hover {
+            color: var(--purple-600);
+        }
+
+        .post-interact-item.like-btn-active {
+            color: #d23465;
+        }
+
+        .detail-link {
+            font-size: 13px;
+            color: var(--purple-500);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .detail-link:hover {
+            color: var(--purple-600);
+        }
+
+        /* ========= 侧边栏卡片 ========= */
+        .profile-side-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .side-card-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: #1e1e2a;
+            margin: 0 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hot-list-side {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .hot-list-side li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .hot-list-side li:hover {
+            background: linear-gradient(90deg, var(--purple-50), transparent);
+            color: var(--purple-600);
+        }
+
+        .hot-badge-side {
+            background: linear-gradient(90deg, var(--accent), #ff6b96);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 11px;
+        }
+
+        .follow-badge {
+            color: var(--purple-500);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .follow-badge:hover {
+            color: var(--purple-600);
+        }
+
+        /* ========= 简介卡片 ========= */
+        .profile-intro-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .intro-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: #1e1e2a;
+            margin: 0 0 12px 0;
+        }
+
+        .intro-content {
+            color: #5a5e73;
+            font-size: 14px;
+            line-height: 1.6;
+            background: #fbfaff;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+        }
+
+        .intro-field {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(231, 227, 243, 0.7);
+        }
+
+        .intro-field:last-child {
+            border-bottom: 0;
+        }
+
+        .intro-key {
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .intro-value {
+            color: #1e1e2a;
+            font-weight: 600;
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+        /* ========= 加载提示 ========= */
+        .loading-tip-profile {
+            text-align: center;
+            padding: 20px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+
+        /* ========= 返回顶部 ========= */
+        .back-top-btn {
+            position: fixed;
+            right: 40px;
+            bottom: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            color: #fff;
+            border: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(103, 72, 193, 0.18);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(12px);
+            transition: all 0.2s ease;
+            z-index: 120;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .back-top-btn.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* ========= 顶栏微调 ========= */
+        .red-badge {
+            background: #f56565;
+            color: white;
+            border-radius: 20px;
+            padding: 0 6px;
+            font-size: 11px;
+            line-height: 16px;
+            margin-left: 4px;
+        }
+
+        /* ========= 响应式 ========= */
+        @media (max-width: 980px) {
+            .profile-layout {
+                flex-direction: column;
+            }
+
+            .profile-right-col {
+                flex: 1 1 auto;
+                width: 100%;
+            }
+
+            .back-top-btn {
+                right: 20px;
+            }
+
+            .profile-post-body {
+                grid-template-columns: minmax(0, 1fr) 96px;
+            }
+
+            .profile-post-thumb {
+                width: 96px;
+                height: 76px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .profile-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .profile-name-line {
+                justify-content: center;
+            }
+
+            .profile-meta-row {
+                justify-content: center;
+            }
+
+            .profile-action-buttons {
+                justify-content: center;
+            }
+
+            .profile-stats-row {
+                justify-content: center;
+            }
+
+            .profile-field-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search {
+                display: none;
+            }
+
+            .site-title {
+                display: none;
+            }
+
+            .icon-btn span {
+                display: none;
+            }
+
+            .post-thumb-img,
+            .more-indicator {
+                width: 70px;
+                height: 70px;
+            }
+
+            .profile-post-body {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-post-thumb {
+                width: 100%;
+                height: 150px;
+            }
+
+            .post-title {
+                white-space: normal;
+            }
+
+            .post-footer {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+    <script src="../js/vue.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script src="../js/axios-config.js"></script>
+</head>
+
+<body>
+    <!-- 顶栏 -->
+    <div id="topbar-container"></div>
+    <div id="app">
+
+        <!-- 个人资料横幅卡片 -->
+        <div class="profile-banner-card">
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="profile-avatar-lg">
+                        <img :src="resolveAvatarUrl(userInfo.avatar)" alt="用户头像" @error="handleAvatarError">
+                    </div>
+                    <div class="profile-info-main">
+                        <div class="profile-name-line">
+                            <span class="profile-display-name">{{ userInfo.username }}</span>
+                            <span class="profile-badge" v-if="userInfo.role==1">管理员</span>
+                            <span class="profile-id-badge">ID: {{ formatUserId(userInfo.id) }}</span>
+                        </div>
+                        <div class="profile-meta-row">
+                            <span v-if="userInfo.gender!=0"> {{ userInfo.gender }}</span>
+                            <span v-if="userInfo.birthday"> {{formatAge(userInfo.birthday) }}岁</span>
+                            <span> {{ userInfo.major }}</span>
+                        </div>
+                        <div class="profile-stats-row">
+                            <div class="profile-stat-item" @click="viewFollowing">
+                                <span class="profile-stat-number">{{ formatNumber(userInfo.followingCount) }}</span>
+                                <span class="profile-stat-label">关注</span>
+                            </div>
+                            <div class="profile-stat-item" @click="viewFollowers">
+                                <span class="profile-stat-number">{{ formatNumber(userInfo.followerCount) }}</span>
+                                <span class="profile-stat-label">粉丝</span>
+                            </div>
+                            <div class="profile-stat-item">
+                                <span class="profile-stat-number">{{ formatNumber(userInfo.likeCount) }}</span>
+                                <span class="profile-stat-label">累计获赞</span>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="profile-action-buttons">
+                        <button
+                            v-if="!isOwnProfile"
+                            class="btn-profile-primary"
+                            :class="{ followed: isFollowed }"
+                            @click="followUser"
+                        >
+                            {{ isFollowed ? '已关注' : '+ 关注' }}
+                        </button>
+                        <button class="btn-profile" @click="privateChat">✉ 私信</button>
+                        <button class="btn-profile" @click="editProfile">✎ 编辑设置</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 双列内容区 -->
+        <div class="profile-layout">
+            <div class="profile-left-col">
+                <!-- 选项卡 -->
+
+                <!-- 整合后的两行筛选框 -->
+                <div class="filter-combined">
+                    <div class="categorys-row">
+                        <button v-for="category in categorys" :key="category.name" :class="[
+                                { active: activeCategory === category.name },
+                                { essence: category.name === '精华' }  
+                            ]" @click="changeCategory(category.name)">
+                            <div>{{ category.label }}</div>
+                            <div>{{ category.count }}</div>
+                        </button>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <button v-for="filter in filters" :key="filter.name"
+                                :class="{ active: activeFilter === filter.name }" @click="setFilter(filter.name)">{{
+                                filter.label }}</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 帖子列表 -->
+                <div class="user-post-list">
+                    <article v-for="post in allPosts" class="post own-post-card" @click="viewPostDetail(post)">
+                        <div class="profile-post-body">
+                            <div class="profile-post-main">
+                                <div v-if="!isOwnProfile" class="meta profile-post-author">
+                                    <img :src="resolveAvatarUrl(post.avatar)" @error="handleAvatarError" @click.stop="viewUserProfile(post.userId)" alt="头像" />
+                                    <div>
+                                        <div class="name" @click.stop="viewUserProfile(post.userId)">{{ post.username }}
+                                            <span v-if="post.isEssence" class="tag essence">精华</span>
+                                            <span v-if="post.category" class="tag">{{ post.category}}</span>
+                                        </div>
+                                        <div class="sub">{{ formatTimeAgo(post.createTime) }} · 浏览 {{
+                                            formatNumber(post.viewCount)
+                                            }}</div>
+                                    </div>
+                                </div>
+                                <div class="normal-header">
+                                    <div v-if="isOwnProfile" class="own-post-kicker">
+                                        <span v-if="post.isEssence" class="tag essence">精华</span>
+                                        <span v-if="post.category" class="tag">{{ post.category }}</span>
+                                        <span>{{ formatTimeAgo(post.createTime) }}</span>
+                                        <span>浏览 {{ formatNumber(post.viewCount) }}</span>
+                                    </div>
+                                    <div class="post-title">{{ post.title || '未命名帖子' }}</div>
+                                    <div class="post-preview">{{ formatPostSummary(post.summary) }}</div>
+                                </div>
+                            </div>
+                            <div class="thumbs profile-post-thumb">
+                                <img :src="getPostCover(post)" class="thumb-item" @error="handleAvatarError" alt="帖子图片" />
+                            </div>
+                        </div>
+                        <div class="post-footer">
+                            <div class="interact-group">
+                                <button class="btn-like" :class="{ active: post.liked }" @click.stop="toggleLike(post)">
+                                    <span class="icon">
+                                        <svg v-if="!post.liked" t="1774013373201" class="icon" viewBox="0 0 1024 1024"
+                                            version="1.1" p-id="6601" width="16" height="16">
+                                            <path
+                                                d="M512 928c-28.928 0-57.92-12.672-86.624-41.376L106.272 564C68.064 516.352 32 471.328 32 384c0-141.152 114.848-256 256-256 53.088 0 104 16.096 147.296 46.592 14.432 10.176 17.92 30.144 7.712 44.608-10.176 14.432-30.08 17.92-44.608 7.712C366.016 204.064 327.808 192 288 192c-105.888 0-192 86.112-192 192 0 61.408 20.288 90.112 59.168 138.688l315.584 318.816C486.72 857.472 499.616 863.808 512 864c12.704 0.192 24.928-6.176 41.376-22.624l316.672-319.904C896.064 493.28 928 445.696 928 384c0-105.888-86.112-192-192-192-48.064 0-94.08 17.856-129.536 50.272l-134.08 134.112c-12.512 12.512-32.736 12.512-45.248 0s-12.512-32.736 0-45.248l135.104-135.136C610.56 151.808 671.904 128 736 128c141.152 0 256 114.848 256 256 0 82.368-41.152 144.288-75.68 181.696l-317.568 320.8C569.952 915.328 540.96 928 512 928z"
+                                                p-id="6602" fill="#8b8fa3"></path>
+                                        </svg>
+                                        <svg v-if="post.liked" t="1774013407278" class="icon" viewBox="0 0 1024 1024"
+                                            p-id="6814" width="16" height="16">
+                                            <path
+                                                d="M736 128c-65.952 0-128.576 25.024-176.384 70.464-4.576 4.32-28.672 28.736-47.328 47.68L464.96 199.04C417.12 153.216 354.272 128 288 128c-141.152 0-256 114.848-256 256 0 82.432 41.184 144.288 76.48 182.496l316.896 320.128C450.464 911.68 478.304 928 512 928c33.696 0 61.568-16.32 86.752-41.504l316.736-320 2.208-2.464C955.904 516.384 992 471.392 992 384 992 242.848 877.152 128 736 128z"
+                                                p-id="6815" fill="#d23465"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="count">{{ formatNumber(post.likeCount) }}</span>
+                                </button>
+                                <div class="interact-item" @click.stop="showComments(post)"><span class="icon">
+                                        <svg t="1774088679557" class="icon" viewBox="0 0 1024 1024" width="16"
+                                            height="16">
+                                            <path
+                                                d="M512 928c-8.192 0-16.384-3.136-22.624-9.376l-96-96c-12.512-12.512-12.512-32.736 0-45.248s32.736-12.512 45.248 0L512 850.752l73.376-73.376C591.36 771.36 599.488 768 608 768l224 0c17.664 0 32-14.336 32-32L864 224c0-17.632-14.336-32-32-32L192 192C174.368 192 160 206.368 160 224l0 512c0 17.664 14.368 32 32 32l96 0c17.664 0 32 14.304 32 32s-14.336 32-32 32L192 832c-52.928 0-96-43.072-96-96L96 224c0-52.928 43.072-96 96-96l640 0c52.928 0 96 43.072 96 96l0 512c0 52.928-43.072 96-96 96l-210.752 0-86.624 86.624C528.384 924.864 520.192 928 512 928z"
+                                                p-id="6746" fill="#8b8fa3"></path>
+                                            <path
+                                                d="M336 512C309.536 512 288 490.464 288 464S309.536 416 336 416s48 21.536 48 48S362.464 512 336 512z"
+                                                p-id="6747" fill="#8b8fa3"></path>
+                                            <path
+                                                d="M528 512c-26.464 0-48-21.536-48-48s21.536-48 48-48 48 21.536 48 48S554.464 512 528 512z"
+                                                p-id="6748" fill="#8b8fa3"></path>
+                                            <path
+                                                d="M720 512c-26.464 0-48-21.536-48-48s21.536-48 48-48 48 21.536 48 48S746.464 512 720 512z"
+                                                p-id="6749" fill="#8b8fa3"></path>
+                                        </svg>
+                                    </span>
+                                    <span>{{ formatNumber(post.commentCount) }}</span>
+                                </div>
+                                <div class="interact-item" @click.stop="toggleFavorite(post)"><span class="icon">
+                                        <svg v-if="!post.favorited" t="1774013916008" class="icon"
+                                            viewBox="0 0 1024 1024" version="1.1" width="16" height="16">
+                                            <path
+                                                d="M767.104 959.936c-5.344 0-10.688-1.344-15.52-4.032l-241.312-133.856-241.824 133.024c-10.72 5.92-23.904 5.152-33.888-1.92-10.016-7.072-15.104-19.264-13.12-31.328l46.88-284.736-196.448-202.08c-8.256-8.512-11.168-20.928-7.456-32.192 3.68-11.296 13.312-19.616 25.024-21.632l155.072-26.592c17.632-2.944 33.984 8.736 36.96 26.144 2.976 17.408-8.704 33.952-26.144 36.96l-95.168 16.32 165.344 170.08c7.072 7.296 10.272 17.504 8.64 27.488l-38.816 235.68 199.616-109.824c9.632-5.312 21.344-5.312 30.944 0.064l199.168 110.464-38.016-235.776c-1.632-10.016 1.632-20.224 8.704-27.456l164.672-168.256-225.664-34.816c-10.56-1.632-19.584-8.416-24.128-18.08l-99.2-212.384-100.064 211.84c-7.552 16-26.624 22.816-42.624 15.264-15.968-7.552-22.816-26.624-15.264-42.624l129.152-273.44c5.312-11.2 16.576-18.336 28.928-18.336 0 0 0.032 0 0.064 0 12.416 0.032 23.68 7.232 28.928 18.464l120.8 258.624 270.336 41.728c11.872 1.824 21.696 10.144 25.504 21.504 3.776 11.36 0.864 23.936-7.488 32.48l-196.928 201.216 45.92 284.864c1.952 12.096-3.2 24.256-13.216 31.296C780 958.016 773.568 959.936 767.104 959.936z"
+                                                p-id="7710" fill="#8b8fa3"></path>
+                                        </svg>
+                                        <svg v-if="post.favorited" t="1774088541079" class="icon"
+                                            viewBox="0 0 1024 1024" width="16" height="16">
+                                            <path
+                                                d="M957.216 404.32c-3.808-11.36-13.632-19.68-25.504-21.504l-270.336-41.728-120.8-258.624C535.328 71.232 524.032 64.032 511.648 64c0 0-0.032 0-0.064 0-12.384 0-23.648 7.136-28.928 18.336l-121.856 258.016-270.72 40.8c-11.872 1.792-21.728 10.048-25.568 21.408-3.84 11.36-0.992 23.936 7.36 32.512l196.448 202.08L221.44 921.952c-1.984 12.096 3.104 24.256 13.12 31.328 9.984 7.072 23.168 7.808 33.888 1.92l241.824-133.024 241.312 133.856C756.416 958.656 761.76 960 767.104 960c0.256 0 0.48 0 0.64 0 17.696 0 32-14.304 32-32 0-3.968-0.704-7.776-2.016-11.296l-44.896-278.688 196.928-201.248C958.08 428.224 960.992 415.68 957.216 404.32z"
+                                                p-id="6389" fill="#efb336"></path>
+                                        </svg>
+                                    </span><span>{{ formatNumber(post.favoriteCount) }}</span>
+                                </div>
+                            </div>
+                            <div class="action-group">
+                                <div class="action-item" @click.stop="viewPostDetail(post)">详情</div>
+                            </div>
+                        </div>
+                    </article>
+                    <div v-if="loadingMore" class="loading-tip-profile">加载中...</div>
+                    <div v-if="!loadingMore && allLoaded" class="loading-tip-profile">—— 已经到底了 ——</div>
+                </div>
+            </div>
+
+            <aside class="profile-right-col">
+                <!-- 个人简介卡片 -->
+                <div class="profile-intro-card">
+                    <h4 style="margin: 0px 0px 10px;">个人简介</h4>
+                    <div class="intro-content">
+                        <div class="intro-field" v-for="field in introFields" :key="field.key">
+                            <span class="intro-key">{{ field.label }}</span>
+                            <span class="intro-value">{{ field.value || '暂无' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TA的好文 -->
+                <div class="profile-side-card">
+                    <h4 style="margin: 0px 0px 10px;">TA的好文</h4>
+                    <ul class="hot-list-side">
+                        <li v-for="article in goodArticles" :key="article.id" @click="viewArticle(article.id)">
+                            <span>{{ article.title }}</span>
+                            <span class="hot-badge-side">{{ article.likes }}赞</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 热门话题 -->
+                <div class="profile-side-card">
+                    <h4 style="margin: 0px 0px 10px;">热门话题</h4>
+                    <ul class="hot-list-side">
+                        <li v-for="topic in hotTopics" :key="topic.name" @click="searchTopic(topic.name)">
+                            <span>{{ topic.name }}</span>
+                            <span class="hot-badge-side">{{ topic.hot }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+
+
+        <button class="back-top-btn" :class="{ show: showBackTop }" @click="scrollToTop">↑</button>
+    </div>
+
+
+    <script src="../components/TopBar.js?v=avatar-fix-1"></script>
+    <script>
+
+        new Vue({
+            el: '#topbar-container',
+            template: '<top-bar></top-bar>',
+            data: {
+                userData: {
+                    isLogin: true,
+                    userName: '林奈_Official',
+                    userId: '327620255',
+                    userBio: '热爱记录瞬间 · 常出没于图书馆和社团',
+                    avatarUrl: './img/头像示例.jpg',
+                    followerCount: 1247,
+                    followingCount: 248,
+                    myPostCount: 86,
+                    messageCount: 3,
+                    notificationCount: 5
+                }
+            }
+        });
+
+        new Vue({
+            el: '#app',
+            data: {
+
+
+                // 用户信息
+                userInfo: {},
+                defaultAvatar: '../img/头像示例.jpg',
+                currentUserId: null,
+                isFollowed: false,
+                // 选项卡
+
+                categorys: [
+                    { name: 'posts', label: '帖子', count: 0 }, { name: 'essence', label: '精华', count: 0 }, { name: 'feed', label: '关注动态', count: 0 }
+                ],  // 导航标签
+                activeCategory: 'posts',        // 当前选中的标签
+                // 排序筛选
+                filters: [
+                    { name: 'latest', label: '最新' },
+                    { name: 'hottest', label: '最热' }
+                ],
+                activeFilter: 'latest', // 当前排序方式
+                posts: [],
+                loadingMore: false,
+                allLoaded: false,
+
+                // 侧边栏数据
+                goodArticles: [
+                    { id: 1, title: '考研倒计时30天', likes: 54 },
+                    { id: 2, title: '校园摄影攻略', likes: 128 },
+                    { id: 3, title: '实验室日常vlog', likes: 76 }
+                ],
+                suggestUsers: [
+                    { id: 101, name: '摄影小哥', relation: '互关' },
+                    { id: 102, name: '社团小助手', relation: '+ 关注' },
+                    { id: 103, name: '紫荆菌', relation: '粉丝 2w' }
+                ],
+                hotTopics: [
+                    { name: '春季社团招新', hot: '182万' },
+                    { name: '考研经验', hot: '121万' },
+                    { name: '二手电脑推荐', hot: '98万' }
+                ],
+                //所有帖子
+                allPosts: [],
+                currentPage: 1,
+                // UI状态
+                showBackTop: false, // 是否显示返回顶部按钮
+
+                // 内容池
+                tags: ['校园资讯', '学习交流', '社团活动', '二手交易', '生活服务', '技术讨论', '精华'],
+                authorNames: ['代码艺术家', 'Linnea', '摄影君', '活动委员', '考研狗', '二手房东', '技术小白'],
+                contentList: [
+                    '本周校园开放日安排已公布：主会场在图书馆广场，新增校友分享环节，现场还有社团招新集市。',
+                    '二手交易提醒：近期出现冒充交易，请大家务必当面验货。出闲置椅子一把，九成新，私信联系。',
+                    '有人用过最新的Next.js15吗？感觉开发效率如何？相比14有哪些明显提升？',
+                    '社团嘉年华定于5月20号，每个社团需要准备一个展位互动节目，报名截止本周五。',
+                    '考研倒计时一个月，大家复习进度如何？欢迎互相打气。',
+                    '南门新奶茶店报学号打八折，有没有一起拼单的？抹茶系列好喝。',
+                    '出二手微单一台，箱说全，私信可看细节。',
+                    '【公告】论坛将进行系统维护，届时可能短暂无法访问。'
+                ],
+                imgSets: [
+                    ['https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=200&h=160&fit=crop'],
+                    ['https://images.unsplash.com/photo-1526318472351-c75fcf070ee3?w=200&h=160&fit=crop', 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=200&h=160&fit=crop'],
+                    ['https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=200&h=160&fit=crop', 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=200&h=160&fit=crop', 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=200&h=160&fit=crop'],
+                    ['https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=200&h=160&fit=crop', 'https://images.unsplash.com/photo-1523206489230-c012c8b946c2?w=200&h=160&fit=crop'],
+                ]
+            },
+
+            computed: {
+                filteredPosts() {
+                    if (this.activeTab === 'posts') return this.posts;
+                    return [];
+                },
+                isOwnProfile() {
+                    return String(this.currentUserId || '') === String(this.userInfo.id || '');
+                },
+                introFields() {
+                    return [
+                        { key: 'email', label: '邮箱', value: this.userInfo.email },
+                        { key: 'mobile', label: '手机号', value: this.userInfo.mobile },
+                        { key: 'signature', label: '个性签名', value: this.userInfo.signature },
+                        { key: 'major', label: ' 专业', value: this.userInfo.major },
+                        { key: 'status', label: '状态', value: this.userInfo.status },
+                        { key: 'createTime', label: '创建时间', value: this.userInfo.createTime }
+                    ];
+                }
+            },
+
+            mounted() {
+                const urlParams = new URLSearchParams(window.location.search);
+                let userId = urlParams.get('userId');
+                this.currentUserId = localStorage.getItem('userId');
+                if (!userId || userId === 'null' || userId === '') {
+                    userId = localStorage.getItem('userId');
+                }
+                if (userId && userId !== 'null' && urlParams.get('userId') !== userId) {
+                    window.history.replaceState(null, '', `profile.html?userId=${userId}`);
+                }
+                this.getUser(userId);
+                this.refreshPosts();
+
+                window.addEventListener('scroll', this.handleScroll);
+            },
+
+            beforeDestroy() {
+                window.removeEventListener('scroll', this.handleScroll);
+            },
+
+            methods: {
+                getUser(userId) {
+                    // axios.get(`/api/user/${userId}`) // 旧接口路径保留注释，不删除
+                    axios.get(`/api/user/info/${userId}`)
+                        .then(response => {
+                            // 请求成功
+                            const result = response.data;
+                            if (result.code === 1) {
+                                this.userInfo = {
+                                    ...result.data,
+                                    avatar: this.resolveAvatarUrl(result.data.avatar)
+                                };
+                                this.syncFollowState();
+                                this.syncCategoryCounts();
+                                this.refreshPosts();
+                                localStorage.setItem('userInfo', JSON.stringify(result.data));
+                            } else {
+                                console.error('获取失败:', result.msg);
+                            }
+                        })
+                        .catch(error => {
+                            // 请求失败
+                            console.error('请求异常:', error);
+                        });
+                },
+                getFollowStorageKey() {
+                    return `followedUsers_${this.currentUserId || 'guest'}`;
+                },
+                getFollowedUsers() {
+                    try {
+                        return JSON.parse(localStorage.getItem(this.getFollowStorageKey()) || '[]');
+                    } catch (error) {
+                        return [];
+                    }
+                },
+                syncFollowState() {
+                    if (this.isOwnProfile) {
+                        this.isFollowed = false;
+                        return;
+                    }
+                    // const followedUsers = this.getFollowedUsers().map(String); // 旧版 localStorage 模拟关注，保留注释，不删除
+                    // this.isFollowed = followedUsers.includes(String(this.userInfo.id)); // 旧版 localStorage 模拟关注，保留注释，不删除
+                    axios.get(`/api/user/follow/status/${this.userInfo.id}`)
+                        .then(response => {
+                            if (response.data.code === 1) {
+                                this.isFollowed = !!response.data.data;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('获取关注状态失败:', error);
+                        });
+                },
+                syncCategoryCounts() {
+                    const postCount = Number(this.userInfo.postCount) || 0;
+                    const essenceCount = Number(this.userInfo.essenceCount) || 0;
+                    this.categorys = this.categorys.map(category => {
+                        if (category.name === 'posts') return { ...category, count: postCount };
+                        if (category.name === 'essence') return { ...category, count: essenceCount };
+                        return category;
+                    });
+                },
+                resolveAvatarUrl(avatar) {
+                    if (!avatar) {
+                        return this.defaultAvatar;
+                    }
+                    if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:') || avatar.startsWith('blob:')) {
+                        return avatar;
+                    }
+                    if (avatar.startsWith('/')) {
+                        return avatar;
+                    }
+                    return avatar;
+                },
+                handleAvatarError(event) {
+                    if (event.target.src.includes('/img/头像示例.jpg')) {
+                        return;
+                    }
+                    event.target.src = this.defaultAvatar;
+                },
+                formatPostSummary(summary) {
+                    const text = String(summary || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                    if (!text) {
+                        return '这个帖子暂时没有摘要，点进去看看完整内容吧。';
+                    }
+                    return text.length > 120 ? `${text.slice(0, 120)}...` : text;
+                },
+                getFirstContentImage(post) {
+                    const fields = [post.content, post.htmlContent, post.body, post.detail, post.summary];
+                    for (const value of fields) {
+                        const text = String(value || '');
+                        const htmlMatch = text.match(/<img[^>]+src=["']([^"']+)["']/i);
+                        if (htmlMatch && htmlMatch[1]) return htmlMatch[1];
+                        const mdMatch = text.match(/!\[[^\]]*]\(([^)]+)\)/);
+                        if (mdMatch && mdMatch[1]) return mdMatch[1];
+                    }
+                    return '';
+                },
+                getPostCover(post) {
+                    const images = Array.isArray(post.images) ? post.images : [];
+                    const cover = post.image || post.cover || post.coverImage || images[0] || this.getFirstContentImage(post) || post.avatar;
+                    return this.resolveAvatarUrl(cover);
+                },
+                formatUserId(num) {
+                    let str = String(num);
+                    if (str.length < 6) {
+                        return ('000000' + str).slice(-6);
+                    }
+                    return str;
+                },
+                formatAge(birthday) {
+                    // 如果输入为空，返回null
+                    if (!birthday) return null;
+                    // 将出生日期转为Date对象
+                    const birthDate = new Date(birthday);
+                    const today = new Date();
+                    // 如果出生日期无效，返回null
+                    if (isNaN(birthDate.getTime())) return null;
+                    // 计算年龄
+                    let age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    // 如果还没过生日，年龄减1
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                        age--;
+                    }
+                    return age;
+
+                },
+                formatNumber(num) {
+                    const value = Number(num) || 0;
+                    if (value >= 10000) {
+                        return (value / 10000).toFixed(1) + 'w';
+                    }
+                    return String(value);
+                },
+
+                getRandomImgs() {
+                    return this.imgSets[Math.floor(Math.random() * this.imgSets.length)] || [];
+                },
+
+                getTimeAgo() {
+                    const hours = Math.floor(Math.random() * 24) + 1;
+                    return `${hours}小时前`;
+                },
+
+                initPosts() {
+                    for (let i = 0; i < 8; i++) {
+                        const gender = Math.random() > 0.5 ? 'women' : 'men';
+                        const avatarNum = Math.floor(Math.random() * 70);
+                        this.posts.push({
+                            id: i,
+                            authorName: this.authorNames[Math.floor(Math.random() * this.authorNames.length)],
+                            tag: this.tags[Math.floor(Math.random() * this.tags.length)],
+                            content: this.contentList[Math.floor(Math.random() * this.contentList.length)],
+                            images: this.getRandomImgs(),
+                            likeCount: Math.floor(Math.random() * 120) + 5,
+                            commentCount: Math.floor(Math.random() * 40),
+                            favoriteCount: Math.floor(Math.random() * 30) + 2,
+                            views: Math.floor(Math.random() * 10000) + 1000,
+                            timeAgo: this.getTimeAgo(),
+                            isLiked: Math.random() > 0.7,
+                            isFavorited: Math.random() > 0.8,
+                            avatar: `https://randomuser.me/api/portraits/${gender}/${avatarNum}.jpg`,
+                            authorId: avatarNum
+                        });
+                    }
+                },
+
+                handleScroll() {
+                    this.showBackTop = window.scrollY > 240;
+
+                    if (this.loadingMore || this.allLoaded) return;
+
+                    const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 400;
+                    if (nearBottom) {
+                        this.loadMorePosts();
+                    }
+                },
+
+                loadMorePosts() {
+                    if (this.loadingMore || this.allLoaded) return;
+                    this.loadingMore = true;
+                    // setTimeout(() => { /* 旧版前端模拟帖子加载逻辑保留注释，不删除 */ }, 600);
+                    const isFeed = this.activeCategory === 'feed';
+                    const targetUserId = this.userInfo.id || new URLSearchParams(window.location.search).get('userId') || localStorage.getItem('userId');
+                    const url = isFeed ? '/api/user/follow/feed' : `/api/user/${targetUserId}/posts`;
+                    axios.get(url, {
+                        params: {
+                            page: this.currentPage,
+                            size: 10,
+                            isEssence: this.activeCategory === 'essence' ? 1 : 0,
+                            sort: this.activeFilter
+                        }
+                    })
+                        .then(response => {
+                            const records = response.data.records || [];
+                            if (!isFeed && this.currentPage === 1 && typeof response.data.total !== 'undefined') {
+                                const total = Number(response.data.total) || 0;
+                                if (this.activeCategory === 'essence') {
+                                    this.userInfo.essenceCount = total;
+                                } else {
+                                    this.userInfo.postCount = total;
+                                }
+                                this.syncCategoryCounts();
+                            }
+                            if (this.currentPage === 1) {
+                                this.allPosts = records;
+                            } else {
+                                this.allPosts = this.allPosts.concat(records);
+                            }
+                            this.currentPage = (response.data.current || this.currentPage) + 1;
+                            this.allLoaded = !response.data.hasNext;
+                        })
+                        .catch(error => {
+                            console.error('加载帖子失败:', error);
+                        })
+                        .finally(() => {
+                            this.loadingMore = false;
+                        });
+                },
+
+                refreshPosts() {
+                    this.currentPage = 1;
+                    this.allPosts = [];
+                    this.allLoaded = false;
+                    if (!this.userInfo.id && this.activeCategory !== 'feed') {
+                        return;
+                    }
+                    this.loadMorePosts();
+                },
+
+                changeCategory(category) {
+                    if (this.activeCategory === category) {
+                        return;
+                    }
+                    if (category === 'feed' && !this.isOwnProfile) {
+                        window.location.href = `feed.html`;
+                        return;
+                    }
+                    this.activeCategory = category;
+                    this.refreshPosts();
+                },
+
+                setFilter(filter) {
+                    if (this.activeFilter === filter) {
+                        return;
+                    }
+                    this.activeFilter = filter;
+                    this.refreshPosts();
+                },
+
+                formatTimeAgo(dateTime) {
+                    if (!dateTime) return '';
+                    const targetTime = new Date(dateTime);
+                    const now = new Date();
+                    const diffMs = now - targetTime;
+                    const diffMinutes = Math.floor(diffMs / 60000);
+                    if (diffMinutes < 1) return '刚刚';
+                    if (diffMinutes < 60) return `${diffMinutes}分钟前`;
+                    const diffHours = Math.floor(diffMinutes / 60);
+                    if (diffHours < 24) return `${diffHours}小时前`;
+                    const month = String(targetTime.getMonth() + 1).padStart(2, '0');
+                    const day = String(targetTime.getDate()).padStart(2, '0');
+                    return `${month}-${day}`;
+                },
+
+                toggleLike(post) {
+                    if (post) {
+                        post.liked = !post.liked;
+                        post.likeCount = (Number(post.likeCount) || 0) + (post.liked ? 1 : -1);
+                    }
+                },
+
+                toggleFavorite(post) {
+                    if (post) {
+                        post.favorited = !post.favorited;
+                        post.favoriteCount = (Number(post.favoriteCount) || 0) + (post.favorited ? 1 : -1);
+                    }
+                },
+
+                viewPostDetail(post) {
+                    const postId = post && post.id ? post.id : post;
+                    window.open(`../post/detail.html?postId=${postId}`, '_blank');
+                },
+
+                viewUserProfile(id) {
+                    window.location.href = `profile.html?userId=${id}`;
+                },
+
+                showComments(post) {
+                    const postId = post && post.id ? post.id : post;
+                    window.open(`../post/detail.html?postId=${postId}#comments`, '_blank');
+                },
+
+                followUser() {
+                    if (this.isOwnProfile) {
+                        alert('不能关注自己');
+                        return;
+                    }
+                    const request = this.isFollowed
+                        ? axios.delete(`/api/user/follow/${this.userInfo.id}`)
+                        : axios.post(`/api/user/follow/${this.userInfo.id}`);
+                    request.then(response => {
+                        if (response.data.code !== 1) {
+                            alert(response.data.msg || '操作失败');
+                            return;
+                        }
+                        this.isFollowed = !this.isFollowed;
+                        const delta = this.isFollowed ? 1 : -1;
+                        this.userInfo.followerCount = Math.max((Number(this.userInfo.followerCount) || 0) + delta, 0);
+                    }).catch(error => {
+                        console.error('关注操作失败:', error);
+                    });
+                },
+
+                scrollToTop() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                toggleLike(post) {
+                    // const oldPost = this.posts.find(p => p.id === postId); // 旧版 mock 数据逻辑保留注释，不删除
+                    if (post) {
+                        post.liked = !post.liked;
+                        post.likeCount = (Number(post.likeCount) || 0) + (post.liked ? 1 : -1);
+                    }
+                },
+
+                toggleFavorite(post) {
+                    // const oldPost = this.posts.find(p => p.id === postId); // 旧版 mock 数据逻辑保留注释，不删除
+                    if (post) {
+                        post.favorited = !post.favorited;
+                        post.favoriteCount = (Number(post.favoriteCount) || 0) + (post.favorited ? 1 : -1);
+                    }
+                },
+
+                viewPostDetail(post) {
+                    // alert(`查看帖子详情 (ID: ${id})`); // 旧版提示保留注释，不删除
+                    const postId = post && post.id ? post.id : post;
+                    window.open(`../post/detail.html?postId=${postId}`, '_blank');
+                },
+
+                viewUserProfile(id) {
+                    // alert(`查看用户主页 (ID: ${id})`); // 旧版提示保留注释，不删除
+                    window.location.href = `profile.html?userId=${id}`;
+                },
+
+                viewArticle(id) {
+                    alert(`查看文章 (ID: ${id})`);
+                },
+
+                showComments(post) {
+                    // alert(`查看评论 (帖子ID: ${id})`); // 旧版提示保留注释，不删除
+                    const postId = post && post.id ? post.id : post;
+                    window.open(`../post/detail.html?postId=${postId}#comments`, '_blank');
+                },
+
+                followUser() {
+                    if (this.isOwnProfile) {
+                        alert('不能关注自己');
+                        return;
+                    }
+                    // const followedUsers = this.getFollowedUsers().map(String); // 旧版 localStorage 模拟关注，保留注释，不删除
+                    // localStorage.setItem(this.getFollowStorageKey(), JSON.stringify(followedUsers)); // 旧版 localStorage 模拟关注，保留注释，不删除
+                    const request = this.isFollowed
+                        ? axios.delete(`/api/user/follow/${this.userInfo.id}`)
+                        : axios.post(`/api/user/follow/${this.userInfo.id}`);
+                    request.then(response => {
+                        if (response.data.code !== 1) {
+                            alert(response.data.msg || '操作失败');
+                            return;
+                        }
+                        this.isFollowed = !this.isFollowed;
+                        const delta = this.isFollowed ? 1 : -1;
+                        this.userInfo.followerCount = Math.max((Number(this.userInfo.followerCount) || 0) + delta, 0);
+                    }).catch(error => {
+                        console.error('关注操作失败:', error);
+                    });
+                },
+
+                privateChat() {
+                    alert('打开私信窗口');
+                },
+
+                followSuggestUser(id) {
+                    alert(`关注用户 (ID: ${id})`);
+                },
+
+                viewFollowing() {
+                    // alert('查看关注列表'); // 旧版提示保留注释，不删除
+                    const userId = this.userInfo.id || localStorage.getItem('userId');
+                    window.location.href = `following.html?userId=${userId}`;
+                },
+
+                viewFollowers() {
+                    // alert('查看粉丝列表'); // 旧版提示保留注释，不删除
+                    const userId = this.userInfo.id || localStorage.getItem('userId');
+                    window.location.href = `followers.html?userId=${userId}`;
+                },
+
+                goToProfile() {
+                    alert('已在个人主页');
+                },
+
+                editProfile() {
+                    // alert('编辑个人信息'); // 原来的提示保留注释，不删除
+                    const userId = this.userInfo.id || localStorage.getItem('userId');
+                    if (!userId || userId === 'null') {
+                        window.location.href = '../login.html';
+                        return;
+                    }
+                    window.location.href = `edit-profile.html?userId=${userId}`;
+                },
+
+                logout() {
+                    if (confirm('确定要退出登录吗？')) {
+                        alert('已退出登录');
+                    }
+                },
+
+                showMessages() {
+                    alert(`您有 ${this.messageCount} 条新消息`);
+                },
+
+                showNotifications() {
+                    alert(`您有 ${this.notificationCount} 条新通知`);
+                },
+
+                openCompose() {
+                    window.open('../post/create.html', '_blank');
+                },
+
+                handleSearch() {
+                    alert(`搜索: ${this.searchKeyword}`);
+                },
+
+                searchTopic(name) {
+                    alert(`搜索话题: ${name}`);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

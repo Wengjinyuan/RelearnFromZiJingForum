@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <title>紫荆论坛 · 注册</title>
+    <link rel="icon" type="image/x-icon" href="img/zj_icon.ico">
+    <script src="./js/vue.js"></script>
+    <script src="./js/axios-0.18.0.js"></script>
+    <script src="./js/axios-config.js"></script>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --card: rgba(255, 255, 255, 0.96);
+            --muted: #5b5f7a;
+            --purple-50: #f5eefc;
+            --purple-100: #e9dbfb;
+            --purple-200: #d4bbf8;
+            --purple-500: #7b4ef6;
+            --purple-600: #6a3be0;
+            --accent: #ff7ab6;
+            --line: rgba(233, 230, 243, 0.8);
+            --shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(123, 78, 246, 0.08);
+            --radius: 6px;
+            font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #f2f0fc;
+            color: #1e1e2a;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden; /* 禁止整体横向滚动 */
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url(./img/hnbg.jpg);
+            background-size: cover;
+            background-position: center 30%;
+            background-repeat: no-repeat;
+            filter: brightness(0.85) contrast(1.02);
+            z-index: -2;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(123, 78, 246, 0.12), rgba(10, 8, 30, 0.28));
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        a {
+            color: var(--purple-600);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            color: var(--purple-500);
+        }
+
+        .login-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 16px; /* 整体上下留白减小 */
+            min-height: 0;
+        }
+
+        .login-card {
+            max-width: 460px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 32px;
+            box-shadow: var(--shadow);
+            padding: 16px 36px; /* 卡片内边距减小 */
+            margin: 0 auto;
+            max-height: 92vh;
+            overflow: hidden; /* 卡片内部也禁止滚动 */
+            overflow-x: hidden;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 16px; /* 标题底部间距减小 */
+        }
+
+        .login-header .logo-mini {
+            margin: 0 auto 8px; /* 图标与标题间距减小 */
+            width: 46px;
+            height: 46px;
+            font-size: 18px;
+        }
+
+        .login-header h2 {
+            font-weight: 700;
+            font-size: 22px;
+            color: #1e1e2a;
+        }
+
+        .login-header p {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .required {
+            color: #e5484d;
+            margin-left: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 14px; /* 表单项间距减小 */
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2e2e3a;
+            margin-bottom: 5px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            border: 1.5px solid var(--line);
+            border-radius: 14px;
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--purple-500);
+            box-shadow: 0 0 0 3px rgba(123, 78, 246, 0.12);
+        }
+
+        .field-error .input-wrapper {
+            border-color: #e5484d;
+            background-color: #fff8f8;
+        }
+
+        .input-icon {
+            padding: 0 10px;
+            color: var(--muted);
+        }
+
+        .input-icon svg {
+            width: 17px;
+            height: 17px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            border: none;
+            padding: 10px 10px 10px 0;
+            font-size: 14px;
+            background: transparent;
+            outline: none;
+            color: #1e1e2a;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #c2c6dc;
+        }
+
+        .captcha-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .captcha-row .input-wrapper {
+            flex: 1;
+        }
+
+        .captcha-img {
+            width: 100px;
+            height: 42px;
+            background: linear-gradient(125deg, #6a3be0, #9f7ef7);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 3px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sms-btn {
+            width: 100px;
+            height: 42px;
+            border-radius: 14px;
+            border: none;
+            background: var(--purple-600);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .sms-btn:disabled {
+            background: #c7b8f3;
+            cursor: not-allowed;
+        }
+
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            border: none;
+            padding: 11px;
+            border-radius: 30px;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(106, 59, 224, 0.28);
+            margin-top: 6px;
+        }
+
+        .login-btn:active {
+            transform: scale(0.98);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .signup-link {
+            margin-top: 14px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .error-shake {
+            animation: shake 0.32s ease-in-out 0s 2;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+            100% { transform: translateX(0); }
+        }
+
+        .global-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(30, 30, 42, 0.92);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-size: 14px;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.2s;
+        }
+
+        .global-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .global-toast.error {
+            background: #e5484dcc;
+        }
+
+        .global-toast.success {
+            background: #2b9e5ecc;
+        }
+
+        @media (max-width: 560px) {
+            .login-card {
+                padding: 20px;
+                border-radius: 18px;
+            }
+            .captcha-row {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .captcha-img, .sms-btn {
+                width: 100%;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div id="app">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-mini">
+                    <svg version="1.0" width="800.000000" height="800.000000" viewBox="0 0 800.000000 800.000000"
+                         preserveAspectRatio="xMidYMid meet">
+                        <g transform="translate(143.089938,679.550659) scale(0.066804,-0.066804)" fill="#ffffff" stroke="none">
+                            <path d="M3705 7319 c-81 -12 -246 -64 -320 -101 -109 -56 -199 -121 -291 -212 -207 -205 -319 -456 -331 -742 -14 -328 99 -619 329 -844 375 -367 958 -420 1396 -126 334 224 507 568 489 975 -20 467 -335 872 -786 1011 -141 44 -341 60 -486 39z" />
+                            <path d="M2106 4875 c-332 -69 -640 -284 -806 -564 -45 -76 -102 -226 -127 -335 -25 -110 -22 -337 5 -449 51 -205 132 -355 272 -497 74 -76 117 -110 195 -155 454 -264 922 -550 985 -604 160 -136 441 -600 646 -1065 46 -104 76 -138 137 -156 79 -22 156 12 187 83 18 41 18 47 0 227 -11 102 -35 376 -55 610 -30 357 -108 1234 -171 1915 -18 203 -43 286 -122 419 -72 119 -131 193 -234 291 -141 135 -283 215 -475 266 -102 28 -336 35 -437 14z" />
+                            <path d="M5191 4875 c-202 -46 -373 -139 -530 -289 -172 -166 -306 -389 -331 -553 -6 -37 -30 -300 -55 -583 -51 -593 -87 -991 -152 -1700 -55 -596 -55 -599 -27 -636 52 -71 130 -92 201 -55 52 26 67 48 137 201 136 298 368 699 509 883 89 115 108 128 692 479 461 276 482 289 557 355 238 205 373 555 338 873 -30 280 -123 481 -310 671 -118 119 -215 189 -364 260 -160 76 -261 100 -446 105 -112 3 -173 0 -219 -11z" />
+                        </g>
+                    </svg>
+                </div>
+                <h2>加入紫荆论坛</h2>
+                <p>创建账号，开启交流之旅</p>
+            </div>
+
+            <form @submit.prevent="submitRegister">
+                <div class="form-group" :class="{ 'field-error': errors.username }">
+                    <label>名称<span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <span class="input-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+                        <input type="text" v-model="form.username" placeholder="请输入名称">
+                    </div>
+                </div>
+
+                <div class="form-group" :class="{ 'field-error': errors.password }">
+                    <label>设置密码<span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <span class="input-icon"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="11" rx="2" ry="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+                        <input type="password" v-model="form.password" placeholder="请输入密码，至少 6 位">
+                    </div>
+                </div>
+
+                <div class="form-group" :class="{ 'field-error': errors.confirmPassword }">
+                    <label>确认密码<span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <span class="input-icon"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="11" rx="2" ry="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+                        <input type="password" v-model="form.confirmPassword" placeholder="请再次输入密码">
+                    </div>
+                </div>
+
+                <div class="form-group" :class="{ 'field-error': errors.phone }">
+                    <label>手机号<span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <span class="input-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.08 2h3a2 2 0 0 1 2 1.72c.127 1.026.323 2.042.59 3.03.18.64.3 1.29.35 1.95.05.64-.1 1.27-.4 1.83l-1.15 1.93a16 16 0 0 0 5.51 5.51l1.93-1.15a3 3 0 0 1 1.83-.4 12.54 12.54 0 0 1 1.95.35 16.34 16.34 0 0 1 3.03.59A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+                        <input type="text" v-model="form.mobile" placeholder="请输入 11 位手机号">
+                    </div>
+                </div>
+
+                <div class="form-group" :class="{ 'field-error': errors.email }">
+                    <label>邮箱<span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <span class="input-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M22 6l-10 7L2 6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+                        <input type="email" v-model="form.email" placeholder="请输入邮箱">
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn" :disabled="loading">
+                    {{ loading ? '注册中...' : '立即注册' }}
+                </button>
+
+                <div class="signup-link">
+                    已有账号？<a href="login.html">立即登录</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="global-toast" :class="{ show: toastVisible, error: toastType === 'error', success: toastType === 'success' }">
+        {{ toastMessage }}
+    </div>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                form: { username: '', password: '', confirmPassword: '', mobile: '', email: '' },
+                errors: {},
+                loading: false,
+                toastVisible: false,
+                toastMessage: '',
+                toastType: '',
+                toastTimer: null
+            };
+        },
+        methods: {
+            showToast(msg, type = 'error', duration = 2800) {
+                clearTimeout(this.toastTimer);
+                this.toastMessage = msg;
+                this.toastType = type;
+                this.toastVisible = true;
+                this.toastTimer = setTimeout(() => this.toastVisible = false, duration);
+            },
+            validate() {
+                let pass = true;
+                this.errors = {};
+                const mobileOk = /^1[3-9]\d{9}$/.test(this.form.mobile.trim());
+                const emailOk = /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/.test(this.form.email.trim());
+                if (!this.form.username.trim()) { this.errors.username = 'error'; pass = false; }
+                if (!this.form.password || this.form.password.length < 6) { this.errors.password = 'error'; pass = false; }
+                if (this.form.password !== this.form.confirmPassword) { this.errors.confirmPassword = 'error'; pass = false; }
+                if (!mobileOk) { this.errors.phone = 'error'; pass = false; }
+                if (!emailOk) { this.errors.email = 'error'; pass = false; }
+                return pass;
+            },
+            async submitRegister() {
+                if (!this.validate()) {
+                    this.$nextTick(() => {
+                        document.querySelectorAll('.field-error').forEach(el => {
+                            el.classList.add('error-shake');
+                            setTimeout(() => el.classList.remove('error-shake'), 400);
+                        });
+                    });
+                    this.showToast('请填写名称、密码、确认密码、正确手机号和邮箱');
+                    return;
+                }
+
+                this.loading = true;
+                try {
+                    const payload = {
+                        account: this.form.username.trim(),
+                        username: this.form.username.trim(),
+                        password: this.form.password,
+                        confirmPassword: this.form.confirmPassword,
+                        mobile: this.form.mobile.trim(),
+                        email: this.form.email.trim()
+                    };
+                    const res = await axios.post('/api/user/register', payload);
+                    if (res.data.code === 1) {
+                        this.showToast('注册成功，即将跳转到登录页', 'success');
+                        setTimeout(() => location.href = 'login.html', 1200);
+                    } else {
+                        this.showToast(res.data.msg || '注册失败');
+                    }
+                } catch (e) {
+                    this.showToast(e.response?.data?.msg || '网络异常或注册失败');
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>
+

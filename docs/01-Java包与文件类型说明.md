@@ -52,7 +52,7 @@ VO 是 View Object。放 `AccountVO.java`、`LoginVO.java` 等返回给前端的
 
 ### `mapper`（数据库访问包）
 
-放 `XxxMapper.java`。Mapper 通常是 MyBatis/MyBatis-Plus 接口，负责增删改查数据库。
+放 `XxxMapper.java`，负责增删改查数据库。本工程 F01–F03 主要使用 MyBatis-Plus 的 Mapper 接口；F04–F11 为了让初学者逐字看到 SQL，使用注入 `JdbcTemplate` 的 Mapper 类。两种写法都属于数据访问层，Controller 仍不直接执行 SQL。
 
 ### `entity`（数据库实体包）
 

@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紫荆论坛 · 帖子详情</title>
+    <link rel="icon" type="image/x-icon" href="../img/zj_icon.ico">
+    <link rel="stylesheet" href="../css/common.css">
+    <style>
+        html {
+            /*强制显示滚动条 */
+            overflow-y: scroll;
+        }
+
+        .detail-container {
+            max-width: 1180px;
+            margin: 24px auto;
+
+            padding: 0 16px;
+            align-items: flex-start;
+        }
+
+        .detail-main-container {
+            display: flex;
+
+            gap: 18px;
+        }
+
+        .detail-main {
+            flex: 1 1 68%;
+        }
+
+        .detail-side {
+            flex: 0 0 320px;
+        }
+
+
+        .breadcrumb {
+
+            width: 100%;
+            margin-bottom: 16px;
+            max-width: 1180px;
+            margin: 24px auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--purple-600);
+            text-decoration: underline;
+        }
+
+        .post-detail-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 18px;
+            box-shadow: 0 6px 18px rgba(99, 70, 190, 0.03);
+            position: relative;
+            transition: all 0.3s linear;
+            ;
+        }
+
+        .post-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .post-detail-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .post-detail-meta img {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--purple-100);
+        }
+
+        .post-author-name {
+            font-weight: 700;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .author-badge {
+            background: var(--purple-50);
+            color: var(--purple-600);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .admin-badge {
+            background: #ffd700;
+            color: #8b4513;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .post-publish-info {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .post-admin-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .admin-btn {
+            background: transparent;
+            border: none;
+            padding: 4px 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .admin-btn:hover {
+            color: var(--purple-600);
+        }
+
+        .admin-btn.essence-btn:hover {
+            color: var(--gold-dark);
+        }
+
+        .admin-btn.delete:hover {
+            color: #e05a5a;
+        }
+
+        .post-detail-title {
+            font-size: 26px;
+            margin: 12px 0 4px;
+            color: #1e1e2a;
+            word-break: break-word;
+        }
+
+        .title-text {
+
+            font-weight: 700;
+            display: inline;
+            word-break: break-word;
+        }
+
+        .post-tags {
+            display: flex;
+            gap: 8px;
+            margin: 16px 0 12px;
+            flex-wrap: wrap;
+        }
+
+
+        .topic-tag {
+            color: var(--purple-500);
+            background: transparent;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+
+        .essence-tag {
+            color: #c33e3e;
+            background: transparent;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .topic-tag:hover {
+            color: #b582ff;
+        }
+
+        .essence-tag:hover {
+            color: #db7878;
+
+        }
+
+        .post-detail-content {
+            font-size: 16px;
+            line-height: 1.75;
+            margin: 20px 0;
+            color: #1e1e2a;
+        }
+
+        .post-detail-content img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: var(--radius);
+            margin: 10px 0;
+        }
+
+        .post-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .post-images img {
+            width: calc(33.333% - 7px);
+            border-radius: var(--radius);
+            border: 1px solid var(--line);
+            object-fit: cover;
+            aspect-ratio: 16/9;
+            background: #f9f7ff;
+            cursor: zoom-in;
+            transition: opacity 0.2s;
+        }
+
+        .post-images img:hover {
+            opacity: 0.9;
+        }
+
+        .post-actions-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0 8px;
+            border-top: 1px solid var(--line);
+            margin-top: 16px;
+        }
+
+        .post-actions-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .post-actions-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 30px;
+            transition: color 0.2s;
+        }
+
+        .action-btn:hover {
+            color: var(--purple-800);
+        }
+
+        .action-btn.likeactive {
+            color: #d23465;
+        }
+
+        .action-btn.favoriteactive {
+            color: #efb336;
+        }
+
+
+        .action-btn .icon {
+            font-size: 22px;
+            line-height: 1;
+        }
+
+        .action-btn.report-btn {
+            color: #b9b9c9;
+        }
+
+        .action-btn.report-btn:hover {
+            color: #e05a5a;
+        }
+
+        .delete-text-btn {
+            color: #b9b9c9;
+            font-size: 14px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+        .delete-text-btn:hover {
+            color: #e05a5a;
+        }
+
+        .comment-section {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 6px 18px rgba(99, 70, 190, 0.02);
+        }
+
+        .comment-tab {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .comment-tab h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .comment-count {
+            color: var(--muted);
+            font-weight: 400;
+            margin-left: 8px;
+        }
+
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .filter-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--purple-600);
+        }
+
+        .sort-buttons {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .sort-btn {
+            border: 1px solid var(--line);
+            background: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            color: var(--muted);
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        .sort-btn:hover {
+            color: var(--purple-600);
+            border-color: var(--purple-200);
+        }
+
+        .sort-btn.active {
+            background: var(--purple-50);
+            color: var(--purple-600);
+            border-color: var(--purple-200);
+        }
+
+        .comment-input-area {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .comment-input-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .comment-input-wrapper {
+            flex: 1;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            padding: 8px 16px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .comment-input-wrapper input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            background: transparent;
+        }
+
+        .at-btn,
+        .emoji-btn,
+        .image-btn {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 20px;
+            transition: color 0.2s;
+        }
+
+        .at-btn:hover,
+        .emoji-btn:hover,
+        .image-btn:hover {
+            color: var(--purple-600);
+        }
+
+        .comment-submit {
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            color: #fff;
+            border: none;
+            padding: 8px 22px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .comment-list {
+            margin-top: 20px;
+        }
+
+        .comment-item {
+            gap: 12px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--line);
+            position: relative;
+        }
+
+        .comment-wrapper {
+            display: flex;
+            gap: 8px;
+        }
+
+        .comment-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .comment-content {
+            flex: 1;
+            position: relative;
+        }
+
+        .comment-delete-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            color: #c5c5d5;
+            font-size: 12px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            z-index: 5;
+            margin-top: 12px;
+        }
+
+        .comment-delete-btn:hover {
+            color: #e05a5a;
+        }
+
+
+        .comment-header {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .comment-header-author {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+            padding-right: 60px;
+        }
+
+        .comment-author {
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .comment-badge {
+            background: var(--purple-50);
+            color: var(--purple-600);
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .comment-time {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .comment-text {
+            font-size: 15px;
+            line-height: 1.6;
+            margin: 16px 0 8px;
+            padding-right: 60px;
+        }
+
+        .comment-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+            padding-right: 60px;
+        }
+
+        .comment-image {
+            width: calc(33.33% - 6px);
+            max-width: 150px;
+            border-radius: var(--radius);
+            border: 1px solid var(--line);
+            cursor: zoom-in;
+            object-fit: cover;
+            aspect-ratio: 1/1;
+        }
+
+        .comment-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 20px;
+            margin-top: 8px;
+        }
+
+        .comment-action {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--muted);
+            font-size: 13px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            padding: 2px 4px;
+            transition: color 0.2s;
+        }
+
+        .comment-action:hover {
+            color: var(--purple-800);
+        }
+
+        .comment-action.report {
+            color: #c5c5d5;
+        }
+
+        .comment-action.report:hover {
+            color: #e05a5a;
+        }
+
+        .comment-action.liked {
+            color: var(--purple-600);
+        }
+
+        .comment-action.like-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .comment-action.like-btn.liked {
+            color: #d23465;
+        }
+
+        .comment-action.like-btn svg {
+            flex-shrink: 0;
+        }
+
+        .emoji-panel {
+            position: absolute;
+            top: 100%;
+            left: 60px;
+            z-index: 50;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            padding: 10px;
+            width: 320px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .emoji-item {
+            cursor: pointer;
+            font-size: 22px;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background 0.15s;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emoji-item:hover {
+            background: var(--purple-50);
+        }
+
+        .comment-image-preview {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .preview-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--line);
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-preview {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 20px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .remove-preview:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .more-replies {
+            text-align: center;
+            padding: 10px 0 4px;
+            color: var(--purple-600);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .more-replies:hover {
+            color: var(--purple-500);
+        }
+
+        .more-replies .arrow {
+            font-size: 12px;
+        }
+
+        .reply-input-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            margin-bottom: 8px;
+            padding-left: 60px;
+        }
+
+        .reply-input-wrapper {
+            flex: 1;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 6px 12px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+        }
+
+        .reply-input-wrapper input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 13px;
+            background: transparent;
+        }
+
+        .reply-submit {
+            background: var(--purple-500);
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .reply-cancel {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--muted);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .reply-list {
+            margin-left: 54px;
+            margin-top: 12px;
+            background: #fbfaff;
+            border-radius: var(--radius);
+            padding: 12px;
+        }
+
+        .reply-item {
+            display: flex;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--line);
+            position: relative;
+        }
+
+        .reply-item:last-child {
+            border-bottom: none;
+        }
+
+        .reply-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .reply-content {
+            flex: 1;
+            position: relative;
+        }
+
+        .reply-delete-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            color: #c5c5d5;
+            font-size: 11px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 2px 6px;
+            z-index: 5;
+        }
+
+        .reply-delete-btn:hover {
+            color: #e05a5a;
+        }
+
+        .reply-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 2px;
+            padding-right: 50px;
+        }
+
+        .reply-author {
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .reply-to {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .reply-to .at-reply {
+            color: var(--purple-600);
+            cursor: pointer;
+        }
+
+        .reply-text {
+            font-size: 14px;
+            margin: 4px 0;
+            padding-right: 50px;
+        }
+
+        .reply-footer {
+            display: flex;
+            gap: 16px;
+            margin-top: 4px;
+            justify-content: flex-end;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 14px;
+            margin-bottom: 14px;
+            box-shadow: 0 6px 18px rgba(99, 70, 190, 0.02);
+        }
+
+        .author-card {
+            text-align: center;
+        }
+
+        .author-card-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 10px auto;
+            border: 3px solid var(--purple-100);
+            cursor: pointer;
+        }
+
+        .author-card-name {
+            font-weight: 700;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .author-card-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 16px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: var(--purple-600);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .follow-btn {
+            width: 100%;
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .follow-btn.following {
+            background: #fff;
+            color: var(--muted);
+            box-shadow: inset 0 0 0 1px var(--line);
+        }
+
+        .massage-btn {
+            width: 100%;
+            background: #fff;
+            border: 1px solid var(--line);
+            padding: 10px;
+            border-radius: 30px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .massage-btn:hover {
+            border-color: var(--purple-500);
+            color: var(--purple-600);
+        }
+
+        .hot-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .hot-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .hot-list li:hover {
+            color: var(--purple-600);
+        }
+
+        .hot-badge {
+            background: linear-gradient(90deg, var(--accent), #ff6b96);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .footer {
+            max-width: 1180px;
+            margin: 28px auto;
+            padding: 22px 16px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .back-to-top {
+            position: fixed;
+            right: 40px;
+            bottom: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            color: #fff;
+            border: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(103, 72, 193, 0.18);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(12px);
+            transition: all .2s ease;
+            z-index: 120;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            z-index: 200;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            animation: fadeInOut 2s ease;
+        }
+
+        @keyframes fadeInOut {
+            0% {
+                opacity: 0;
+                bottom: 20px;
+            }
+
+            15% {
+                opacity: 1;
+                bottom: 30px;
+            }
+
+            85% {
+                opacity: 1;
+                bottom: 30px;
+            }
+
+            100% {
+                opacity: 0;
+                bottom: 20px;
+            }
+        }
+
+
+
+        @media(max-width:980px) {
+            .detail-container {
+                flex-direction: column;
+            }
+
+            .detail-side {
+                flex: 1 1 auto;
+                width: 100%;
+            }
+        }
+
+        @media(max-width:560px) {
+            .search {
+                display: none;
+            }
+
+            .site-title {
+                display: none;
+            }
+
+            .user-area {
+                gap: 6px;
+            }
+
+            .icon-btn span {
+                display: none;
+            }
+        }
+    </style>
+    <script src="../js/vue.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script src="../js/axios-config.js"></script>
+</head>
+
+<body>
+    <!-- 顶栏 -->
+    <div id="topbar-container">
+        <div class="topbar">
+            <div class="wrap">
+                <div class="brand" onclick="location.href='../index.html'">
+                    <div class="logo-mini">紫</div>
+                    <div>
+                        <div class="site-title">紫荆论坛</div>
+                        <div style="font-size:12px;color:var(--muted)">讨论 · 资讯 · 分享</div>
+                    </div>
+                </div>
+                <div class="search">
+                    <input type="text" placeholder="搜索帖子或用户..."
+                        onkeydown="if(event.key==='Enter'&&this.value.trim()) location.href='../post/search.html?q='+encodeURIComponent(this.value.trim())">
+                </div>
+                <div class="user-area">
+                    <button class="icon-btn" onclick="location.href='../user/chat.html'">消息</button>
+                    <button class="icon-btn" onclick="location.href='../user/message.html'">通知</button>
+                    <button class="compose-fab" onclick="location.href='../post/create.html'">＋ 发布新帖</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="app">
+
+
+        <!-- 主内容 -->
+        <div v-show="postDetail.id">
+            <div class="detail-container">
+                <div class="breadcrumb">
+                    <a href="../index.html">紫荆论坛</a> <span>></span>
+                    <span style="cursor: pointer;" v-if="postDetail.category"
+                        @click="backWithChoose(postDetail.category)">{{postDetail.category
+                        }}</span>
+                    <span v-if="postDetail.category">></span> <span>正文详情</span>
+                </div>
+                <div class="detail-main-container">
+                    <div class="detail-main">
+                        <!-- 帖子卡片 -->
+                        <div class="post-detail-card">
+                            <div class="post-header-row">
+                                <div class="post-detail-meta">
+                                    <div class="avatar-wrapper" @click="goToProfile(postDetail.author.id)">
+                                        <img :src="postDetail.avatar || '../img/头像示例.jpg'" alt="author" loading="lazy">
+                                    </div>
+                                    <div class="post-author-info">
+                                        <div class="post-author-name">
+                                            <span style="cursor:pointer;" @click="goToProfile(postDetail.author.id)">{{
+                                                postDetail.username
+                                                }}</span>
+                                            <span class="author-badge">楼主</span>
+                                            <span class="admin-badge" v-if="postDetail.author.role!=0">管理员</span>
+                                        </div>
+                                        <div class="post-publish-info">发布于 {{formatTimeAgo(postDetail.createTime)}} ·
+                                            浏览
+                                            {{ formatNumber(postDetail.viewCount) || 0 }}</div>
+                                    </div>
+                                </div>
+                                <div class="post-admin-actions" v-if="isAdmin">
+                                    <button class="admin-btn delete" @click="deletePost(postDetail.id)">删除</button>
+                                </div>
+                            </div>
+                            <h1 class="post-detail-title">
+                                <span class="title-text">{{ postDetail.title }} </span>
+                            </h1>
+                            <div class="post-tags" v-if="postDetail.isEssence|| postDetail.tags">
+                                <span class="essence-tag" v-if="postDetail.isEssence"
+                                    @click="backWithChoose('精华')">#精华</span>
+                                <span class="topic-tag" v-for="tag in postDetail.tags" :key="tag"
+                                    @click="showToast('搜索'+tag)">#{{ tag }}</span>
+                            </div>
+                            <div class="post-detail-content" v-html="postDetail.content"></div>
+                            <div class="post-actions-bar">
+                                <div class="post-actions-left">
+                                    <button class="action-btn" :class="{likeactive: postLiked}"
+                                        @click.stop="toggleLike">
+                                        <span class="icon">
+                                            <svg v-show="!postDetail.liked" class="icon" viewBox="0 0 1024 1024"
+                                                width="16" height="16">
+                                                <path
+                                                    d="M512 928c-28.928 0-57.92-12.672-86.624-41.376L106.272 564C68.064 516.352 32 471.328 32 384c0-141.152 114.848-256 256-256 53.088 0 104 16.096 147.296 46.592 14.432 10.176 17.92 30.144 7.712 44.608-10.176 14.432-30.08 17.92-44.608 7.712C366.016 204.064 327.808 192 288 192c-105.888 0-192 86.112-192 192 0 61.408 20.288 90.112 59.168 138.688l315.584 318.816C486.72 857.472 499.616 863.808 512 864c12.704 0.192 24.928-6.176 41.376-22.624l316.672-319.904C896.064 493.28 928 445.696 928 384c0-105.888-86.112-192-192-192-48.064 0-94.08 17.856-129.536 50.272l-134.08 134.112c-12.512 12.512-32.736 12.512-45.248 0s-12.512-32.736 0-45.248l135.104-135.136C610.56 151.808 671.904 128 736 128c141.152 0 256 114.848 256 256 0 82.368-41.152 144.288-75.68 181.696l-317.568 320.8C569.952 915.328 540.96 928 512 928z"
+                                                    fill="#8b8fa3"></path>
+                                            </svg>
+                                            <svg v-show="postDetail.liked" class="icon" viewBox="0 0 1024 1024"
+                                                width="16" height="16">
+                                                <path
+                                                    d="M736 128c-65.952 0-128.576 25.024-176.384 70.464-4.576 4.32-28.672 28.736-47.328 47.68L464.96 199.04C417.12 153.216 354.272 128 288 128c-141.152 0-256 114.848-256 256 0 82.432 41.184 144.288 76.48 182.496l316.896 320.128C450.464 911.68 478.304 928 512 928c33.696 0 61.568-16.32 86.752-41.504l316.736-320 2.208-2.464C955.904 516.384 992 471.392 992 384 992 242.848 877.152 128 736 128z"
+                                                    fill="#d23465"></path>
+                                            </svg>
+                                        </span> {{ formatNumber(postDetail.likeCount) }} 点赞
+                                    </button>
+                                    <button class="action-btn" :class="{favoriteactive: postFaved}"
+                                        @click.stop="toggleFavorite">
+                                        <span class="icon">
+                                            <svg v-show="!postDetail.favorited" class="icon" viewBox="0 0 1024 1024"
+                                                width="16" height="16">
+                                                <path
+                                                    d="M767.104 959.936c-5.344 0-10.688-1.344-15.52-4.032l-241.312-133.856-241.824 133.024c-10.72 5.92-23.904 5.152-33.888-1.92-10.016-7.072-15.104-19.264-13.12-31.328l46.88-284.736-196.448-202.08c-8.256-8.512-11.168-20.928-7.456-32.192 3.68-11.296 13.312-19.616 25.024-21.632l155.072-26.592c17.632-2.944 33.984 8.736 36.96 26.144 2.976 17.408-8.704 33.952-26.144 36.96l-95.168 16.32 165.344 170.08c7.072 7.296 10.272 17.504 8.64 27.488l-38.816 235.68 199.616-109.824c9.632-5.312 21.344-5.312 30.944 0.064l199.168 110.464-38.016-235.776c-1.632-10.016 1.632-20.224 8.704-27.456l164.672-168.256-225.664-34.816c-10.56-1.632-19.584-8.416-24.128-18.08l-99.2-212.384-100.064 211.84c-7.552 16-26.624 22.816-42.624 15.264-15.968-7.552-22.816-26.624-15.264-42.624l129.152-273.44c5.312-11.2 16.576-18.336 28.928-18.336 0 0 0.032 0 0.064 0 12.416 0.032 23.68 7.232 28.928 18.464l120.8 258.624 270.336 41.728c11.872 1.824 21.696 10.144 25.504 21.504 3.776 11.36 0.864 23.936-7.488 32.48l-196.928 201.216 45.92 284.864c1.952 12.096-3.2 24.256-13.216 31.296C780 958.016 773.568 959.936 767.104 959.936z"
+                                                    fill="#8b8fa3"></path>
+                                            </svg>
+                                            <svg v-show="postDetail.favorited" class="icon" viewBox="0 0 1024 1024"
+                                                width="16" height="16">
+                                                <path
+                                                    d="M957.216 404.32c-3.808-11.36-13.632-19.68-25.504-21.504l-270.336-41.728-120.8-258.624C535.328 71.232 524.032 64.032 511.648 64c0 0-0.032 0-0.064 0-12.384 0-23.648 7.136-28.928 18.336l-121.856 258.016-270.72 40.8c-11.872 1.792-21.728 10.048-25.568 21.408-3.84 11.36-0.992 23.936 7.36 32.512l196.448 202.08L221.44 921.952c-1.984 12.096 3.104 24.256 13.12 31.328 9.984 7.072 23.168 7.808 33.888 1.92l241.824-133.024 241.312 133.856C756.416 958.656 761.76 960 767.104 960c0.256 0 0.48 0 0.64 0 17.696 0 32-14.304 32-32 0-3.968-0.704-7.776-2.016-11.296l-44.896-278.688 196.928-201.248C958.08 428.224 960.992 415.68 957.216 404.32z"
+                                                    fill="#efb336"></path>
+                                            </svg>
+                                        </span> {{ formatNumber(postDetail.favoriteCount) }} 收藏
+                                    </button>
+                                </div>
+                                <div class="post-actions-right">
+                                    <button class="action-btn report-btn" @click="reportPost(postDetail.id)">举报</button>
+                                    <button class="delete-text-btn" v-if="Number(currentUserId)===Number(postAuthor.id)"
+                                        @click="deletePost(postDetail.id)">删除</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 评论区-->
+                        <div class="comment-section">
+                            <!-- 筛选栏 -->
+                            <div class="comment-tab">
+                                <h3>评论 <span class="comment-count">{{ postDetail.commentCount }}</span></h3>
+                                <div style="display: flex; gap: 20px; align-items: center;">
+                                    <label class="filter-checkbox"><input type="checkbox" v-model="filterOnlyOp">
+                                        只看楼主</label>
+                                    <div class="sort-buttons"><button class="sort-btn" :class="{active: sortBy==='hot'}"
+                                            @click="sortBy='hot'">热门</button>
+                                        <button class="sort-btn" :class="{active: sortBy==='asc'}"
+                                            @click="sortBy='asc'">最早</button>
+                                        <button class="sort-btn" :class="{active: sortBy==='desc'}"
+                                            @click="sortBy='desc'">最新</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 输入区 -->
+                            <div class="comment-input-area" style="position:relative;">
+                                <div class="avatar-wrapper">
+                                    <img :src="selfUser.avatar || '../img/头像示例.jpg'" alt="me" class="comment-input-avatar">
+                                </div>
+                                <div style="flex:1; display: flex; flex-direction:column; gap:6px;">
+                                    <div class="comment-input-wrapper">
+                                        <input type="text" v-model="newCommentText" placeholder="写下你的评论..."
+                                            @keyup.enter="submitComment">
+                                        <input type="file" ref="commentImageInput" accept="image/*" style="display:none"
+                                            @change="onCommentImageSelected">
+                                        <button class="emoji-btn" @click.stop="toggleEmojiPicker" title="表情">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                                                <line x1="9" y1="9" x2="9.01" y2="9" />
+                                                <line x1="15" y1="9" x2="15.01" y2="9" />
+                                            </svg>
+                                        </button>
+                                        <button class="image-btn" @click.stop="$refs.commentImageInput.click()"
+                                            title="图片">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                                <path d="M21 15l-5-5L5 21" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <!-- 表情面板 -->
+                                    <div class="emoji-panel" v-if="showEmojiPicker" @click.stop>
+                                        <span v-for="e in emojiList" :key="e" class="emoji-item"
+                                            @click="insertEmoji(e)">{{ e }}</span>
+                                    </div>
+                                    <!-- 图片预览 -->
+                                    <div class="comment-image-preview" v-if="commentImagePreview">
+                                        <div class="preview-item">
+                                            <img :src="commentImagePreview">
+                                            <span class="remove-preview" @click="removeCommentImage">&times;</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="comment-submit" @click="submitComment">发布</button>
+                            </div>
+                            <!-- 评论展示区 -->
+                            <div class="comment-item" v-for="comment in comments" :key="comment.id">
+                                <div class="comment-wrapper">
+                                    <img :src="resolveAvatar(comment.avatar)" class="comment-avatar">
+                                    <div class="comment-header">
+                                        <div class="comment-header-author">
+                                            <span class="comment-author">{{ comment.username }}</span>
+                                            <span class="author-badge" v-if="comment.userId===authorId">楼主</span>
+                                            <span class="admin-badge" v-if="comment.role>0">管理员</span>
+                                        </div>
+                                        <span class="comment-time">{{ formatTimeAgo(comment.createTime) }}</span>
+                                    </div>
+                                    <button v-if="Number(comment.userId)===Number(currentUserId) || isAdmin"
+                                        class="comment-delete-btn" @click="deleteComment(comment.id)">删除</button>
+                                </div>
+                                <div class="comment-content">
+                                    <div class="comment-text">{{ comment.content }}</div>
+                                    <img v-for="url in (comment.imageUrls || [])" :key="url" :src="url" alt="评论图片" style="max-width:240px;max-height:240px;border-radius:8px;display:block;margin:8px 0">
+                                    <div class="comment-footer">
+                                        <button class="comment-action like-btn" :class="{ liked: comment.liked }"
+                                            @click="toggleCommentLike(comment)">
+                                            <svg v-show="!comment.liked" viewBox="0 0 24 24" width="16" height="16"
+                                                fill="none" stroke="currentColor" stroke-width="2">
+                                                <path
+                                                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                            </svg>
+                                            <svg v-show="comment.liked" viewBox="0 0 24 24" width="16" height="16"
+                                                fill="currentColor" stroke="currentColor" stroke-width="2">
+                                                <path
+                                                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                            </svg>
+                                            <span>{{ comment.likeCount || 0 }}</span>
+                                        </button>
+                                        <button class="comment-action" @click="toggleReply(comment.id)">回复</button>
+                                        <button class="comment-action report">举报</button>
+                                    </div>
+                                    <!-- 回复输入区 -->
+                                    <div class="reply-input-area" v-if="replyInputId === comment.id">
+                                        <div class="reply-input-wrapper">
+                                            <input v-model="replyText" placeholder="回复..."
+                                                @keyup.enter="submitReply(comment)">
+                                        </div>
+                                        <button class="reply-submit" @click="submitReply(comment)">发布</button>
+                                        <button class="reply-cancel" @click="cancelReply">取消</button>
+                                    </div>
+                                    <!-- 子评论列表 -->
+                                    <div class="reply-list"
+                                        v-if="comment.subComments && comment.subComments.records && comment.subComments.records.length">
+                                        <div v-for="reply in comment.subComments.records" :key="reply.id"
+                                            class="reply-item">
+                                            <img :src="resolveAvatar(reply.avatar)" class="reply-avatar">
+                                            <div class="reply-content">
+                                                <button v-if="Number(reply.userId)===Number(currentUserId) || isAdmin"
+                                                    class="reply-delete-btn"
+                                                    @click="deleteComment(reply.id)">删除</button>
+                                                <div class="reply-header">
+                                                    <span class="reply-author">{{ reply.username }}</span>
+                                                    <span class="reply-to"
+                                                        v-if="reply.replyUserId && reply.replyUsername">
+                                                        回复 <span class="at-reply">@{{ reply.replyUsername }}</span>
+                                                    </span>
+                                                    <span class="comment-time">{{ formatTimeAgo(reply.createTime)
+                                                        }}</span>
+                                                </div>
+                                                <div class="reply-text">{{ reply.content }}</div>
+                                                <div class="reply-footer">
+                                                    <button class="comment-action like-btn"
+                                                        :class="{ liked: reply.liked }"
+                                                        @click="toggleCommentLike(reply)">
+                                                        <svg v-show="!reply.liked" viewBox="0 0 24 24" width="16"
+                                                            height="16" fill="none" stroke="currentColor"
+                                                            stroke-width="2">
+                                                            <path
+                                                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                                        </svg>
+                                                        <svg v-show="reply.liked" viewBox="0 0 24 24" width="16"
+                                                            height="16" fill="currentColor" stroke="currentColor"
+                                                            stroke-width="2">
+                                                            <path
+                                                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                                        </svg>
+                                                        <span>{{ reply.likeCount || 0 }}</span>
+                                                    </button>
+                                                    <button class="comment-action"
+                                                        @click="toggleReply(comment.id)">回复</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="more-replies" v-if="hasMoreSubComments(comment)"
+                                            @click="loadSubComments(comment)">
+                                            查看更多回复 <span class="arrow">↓</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align:center; padding: 20px 0 0; color: var(--muted); cursor:pointer;"
+                                @click="loadMoreComments" v-if="pageResult.hasNext">加载更多评论</div>
+                            <div v-else style="text-align:center; padding:20px 0 0; color: var(--muted);">没有更多评论了</div>
+                        </div>
+                    </div>
+                    <!-- 侧边栏 -->
+                    <aside class="detail-side">
+                        <div class="card author-card">
+                            <div class="avatar-wrapper"><img :src="postDetail.author.avatar||'../img/头像示例.jpg'"
+                                    alt="author" class="author-card-avatar"></div>
+                            <div class="author-card-name" @click="showToast('查看作者主页')">{{ postDetail.author.username }}
+                            </div>
+                            <div style="color:var(--muted); font-size:13px; margin:4px 0;">
+                                {{postDetail.author.signature}}
+                            </div>
+                            <div class="author-card-stats">
+                                <div class="stat-item"><span class="stat-value">{{postDetail.author.followerCount ||
+                                        0}}</span>
+                                    <div class="stat-label">粉丝</div>
+                                </div>
+                                <div class="stat-item"><span class="stat-value">{{postDetail.author.postCount ||
+                                        0}}</span>
+                                    <div class="stat-label">帖子</div>
+                                </div>
+                                <div class="stat-item"><span
+                                        class="stat-value">{{postDetail.author.receivedLikeCount}}</span>
+                                    <div class="stat-label">获赞</div>
+                                </div>
+                            </div>
+                            <button class="follow-btn" :class="{following: authorFollowed}"
+                                @click="toggleAuthorFollow">{{ authorFollowed ? '已关注' : '＋ 关注' }}</button>
+                            <button class="massage-btn" @click="showToast('私信作者')">发私信</button>
+                        </div>
+                        <div class="card">
+                            <h4 style="margin:0 0 10px 0">热门话题</h4>
+                            <ul class="hot-list">
+                                <li v-for="topic in hotTopics" :key="topic.tagName" @click="goSearch(topic.tagName)">
+                                    <span>{{
+                                        topic.tagName }}</span><span class="hot-badge">{{ topic.hotScore }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+        <button id="backToTop" class="back-to-top" :class="{show: scrollY>240}" @click="scrollToTop"
+            aria-label="返回顶部">↑</button>
+        <!-- 全局toast提示 -->
+        <div class="global-toast"
+            :class="{ show: toastVisible, error: toastType === 'error', success: toastType === 'success' }">
+            {{ toastMessage }}
+        </div>
+    </div>
+
+
+    <script src="../components/TopBar.js?v=topbar-fix-2"></script>
+    <script>
+        new Vue({
+            el: '#topbar-container',
+            template: '<top-bar></top-bar>'
+        });
+        // Vue实例，按照架构调整：从API获取数据并渲染
+        new Vue({
+            el: '#app',
+            data: {
+                postDetail: {
+                    author: {}
+                },
+                authorId: 1,
+                comments: [],
+                pageResult: {
+                    current: 1,
+                    size: 5,
+                    total: 0,
+                    pages: 0,
+                    hasNext: false
+                },
+                subCommentPages: {},
+                subCommentLoading: {},
+                loadingMoreComments: false,
+                postDeleted: false,
+                postLiked: false,
+                postFaved: false,
+                likeCount: 0,
+                favCount: 0,
+                authorFollowed: false,
+                filterOnlyOp: false,
+                sortBy: 'hot',
+                newCommentText: '',
+                replyInputId: null,
+                replyText: '',
+                showEmojiPicker: false,
+                commentImagePreview: null,
+                commentImageFile: null,
+                emojiList: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤔', '🤐', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '😮', '😯', '😲', '😳', '🥺', '😢', '😭', '😤', '😡', '🤬', '💀', '☠️', '👍', '👎', '👊', '✊', '🤛', '🤜', '👏', '🙌', '🤲', '🤝', '💪', '✌️', '🤞', '🖕', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '💔', '💕', '💞', '💗', '💖', '✨', '🌟', '⭐', '🔥', '💯', '🎉', '🎊', '🎈', '🎁', '🏆', '✅', '❌', '❓', '❗', '💡', '📌', '📍', '🔔', '💬', '🗨️'],
+                toastMessage: '',
+                scrollY: 0,
+                toastTimer: null,
+                isAdmin: false,
+                postAuthor: { id: '', name: '', avatar: '', signature: '' },
+                // 侧边栏热点
+                hotTopics: [],
+
+                // toast 控制
+                toastVisible: false,
+                toastMessage: '',
+                toastType: 'info',
+                toastTimer: null,
+                currentUserId: Number(localStorage.getItem('userId')) || 0, isAdmin: false, postAuthor: { id: '', name: '', avatar: '', signature: '', followerCount: 0, postCount: 0, likeCount: 0 }, selfUser: {}, hotTopics: [], loadingMoreComments: false, subCommentPages: {}, subCommentLoading: {}
+            },
+            computed: {
+            },
+            created() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const postId = urlParams.get('postId');
+                const userInfo = this.readStoredJson('userInfo');
+                if (userInfo) {
+                    this.isAdmin = userInfo.role > 0;
+                    this.selfUser = { id: userInfo.id, name: userInfo.username, avatar: userInfo.avatar, signature: userInfo.signature };
+                }
+                this.getPost(postId);
+                this.getComments(postId, 1, 5, this.sortBy);
+                this.getHotTopics();
+            },
+            mounted() {
+                window.addEventListener('scroll', this.handleScroll);
+                document.addEventListener('click', this.handleDocumentClick);
+            },
+            beforeDestroy() {
+                window.removeEventListener('scroll', this.handleScroll);
+                document.removeEventListener('click', this.handleDocumentClick);
+            },
+            watch: {
+                sortBy(val) {
+                    const postId = this.getPostId();
+                    if (postId) this.getComments(postId, 1, 5, val);
+                },
+                filterOnlyOp() {
+                    const postId = this.getPostId();
+                    if (postId) this.getComments(postId, 1, 5, this.sortBy);
+                }
+            },
+            methods: {
+                showToast(message, type = 'info', duration = 2800) {
+                    if (this.toastTimer) clearTimeout(this.toastTimer);
+                    this.toastMessage = message;
+                    this.toastType = type;
+                    this.toastVisible = true;
+                    this.toastTimer = setTimeout(() => {
+                        this.toastVisible = false;
+                    }, duration);
+                },
+                formatTimeAgo(dateTime) {
+                    if (!dateTime) return '';
+                    const targetTime = new Date(dateTime);
+                    const now = new Date();
+                    const diffMs = now - targetTime;
+                    const diffSeconds = Math.floor(diffMs / 1000);
+                    if (diffSeconds < 60) return '刚刚';
+                    const diffMinutes = Math.floor(diffSeconds / 60);
+                    if (diffMinutes < 60) return `${diffMinutes}分钟前`;
+                    const diffHours = Math.floor(diffMinutes / 60);
+                    if (diffHours < 24) return `${diffHours}小时前`;
+                    const diffDays = Math.floor(diffHours / 24);
+                    if (diffDays === 1) return '昨天';
+                    if (diffDays === 2) return '前天';
+                    const year = targetTime.getFullYear();
+                    const month = String(targetTime.getMonth() + 1).padStart(2, '0');
+                    const day = String(targetTime.getDate()).padStart(2, '0');
+                    if (year === now.getFullYear()) return `${month}-${day}`;
+                    return `${year}-${month}-${day}`;
+                },
+                formatNumber(number) {
+                    const num = Number(number);
+                    if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
+                    return num.toString();
+                },
+                resolveAvatar(avatar) {
+                    if (!avatar) return '../img/头像示例.jpg';
+                    if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:') || avatar.startsWith('blob:')) return avatar;
+                    if (avatar.startsWith('/')) return avatar;
+                    return avatar;
+                },
+                getPost(id) {
+                    const userInfo = this.readStoredJson('userInfo');
+                    if (userInfo) this.isAdmin = userInfo.role > 0;
+                    axios.get(`/api/post/${id}`)
+                        .then(response => {
+                            if (response.data.code === 1) {
+                                this.postDetail = response.data.data;
+                                this.postLiked = !!this.postDetail.liked;
+                                this.postFaved = !!this.postDetail.favorited;
+                                const author = this.postDetail.author || {};
+                                this.postAuthor = {
+                                    id: author.id || this.postDetail.userId,
+                                    name: author.username || this.postDetail.username || '未知用户',
+                                    avatar: author.avatar || this.postDetail.avatar || '../img/头像示例.jpg',
+                                    followerCount: author.followerCount || this.postDetail.followerCount || 0,
+                                    postCount: author.postCount || this.postDetail.postCount || 0,
+                                    likeCount: author.receivedLikeCount || this.postDetail.authorLikeCount || 0
+                                };
+                                this.postDetail.author = { ...author, ...this.postAuthor, username: this.postAuthor.name, receivedLikeCount: this.postAuthor.likeCount };
+                                this.loadAuthorFollowState();
+                                this.authorId = response.data.data.userId
+                            } else {
+                                this.error = response.data.msg || '获取帖子详情失败';
+                            }
+                        })
+                        .catch(error => {
+                            this.error = error.message || '网络请求失败';
+                        });
+                },
+                getComments(postId, current = 1, size = 5, sort = '') {
+                    axios.get(`/api/post/${postId}/comments`, { params: { current, size, sort } })
+                        .then(response => {
+                            const data = response.data;
+                            this.comments = data.records || [];
+                            this.pageResult = { current: data.current, size: data.size, total: data.total, pages: data.pages, hasNext: data.hasNext };
+                            this.subCommentPages = {};
+                        })
+                        .catch(() => this.showToast('评论加载失败', 'error'));
+                },
+                loadMoreComments() {
+                    if (!this.pageResult.hasNext || this.loadingMoreComments) return;
+                    this.loadingMoreComments = true;
+                    const postId = this.getPostId();
+                    const next = this.pageResult.current + 1;
+                    axios.get(`/api/post/${postId}/comments`, { params: { current: next, size: this.pageResult.size, sort: this.sortBy } })
+                        .then(response => {
+                            const data = response.data;
+                            this.comments = this.comments.concat(data.records || []);
+                            this.pageResult = { current: data.current, size: data.size, total: data.total, pages: data.pages, hasNext: data.hasNext };
+                        })
+                        .catch(() => this.showToast('加载失败', 'error'))
+                        .finally(() => { this.loadingMoreComments = false; });
+                },
+                getPostId() {
+                    const params = new URLSearchParams(window.location.search);
+                    return params.get('postId');
+                },
+                // 删除帖子
+                deletePost(id) {
+                    if (!confirm('确定要删除这篇帖子吗？删除后无法恢复。')) return;
+                    axios.delete(`/api/post/${id}`)
+                        .then(response => {
+                            if (response.data.code === 1) {
+                                this.showToast('帖子已删除', 'success');
+                                setTimeout(() => window.location.href = '../index.html', 1000);
+                            } else {
+                                this.showToast(response.data.msg || '删除失败', 'error');
+                            }
+                        })
+                        .catch(() => this.showToast('删除失败', 'error'));
+                },
+                // 删除评论
+                deleteComment(commentId) {
+                    if (!confirm('确定要删除这条评论吗？')) return;
+                    const postId = this.getPostId();
+                    axios.delete(`/api/post/${commentId}/comments`)
+                        .then(response => {
+                            if (response.data.code === 1) {
+                                this.removeCommentFromList(commentId);
+                                this.postDetail.commentCount = Math.max(0, (this.postDetail.commentCount || 0) - 1);
+                                this.showToast('评论已删除', 'success');
+                            } else {
+                                this.showToast(response.data.msg || '删除失败', 'error');
+                            }
+                        })
+                        .catch(() => this.showToast('删除失败', 'error'));
+                },
+                removeCommentFromList(id) {
+                    const removeRecursive = (list) => {
+                        for (let i = list.length - 1; i >= 0; i--) {
+                            if (list[i].id === id) { list.splice(i, 1); return true; }
+                            if (list[i].subComments && list[i].subComments.records) {
+                                if (removeRecursive(list[i].subComments.records)) return true;
+                            }
+                        }
+                        return false;
+                    };
+                    removeRecursive(this.comments);
+                },
+                toggleCommentLike(comment) {
+                    if (comment._likeLoading) return;
+                    comment._likeLoading = true;
+                    comment.liked = !comment.liked;
+                    comment.likeCount = Math.max(0, (comment.likeCount || 0) + (comment.liked ? 1 : -1));
+                    axios.post(`/api/post/comment/like/${comment.id}`)
+                        .catch(() => {
+                            comment.liked = !comment.liked;
+                            comment.likeCount = Math.max(0, (comment.likeCount || 0) + (comment.liked ? 1 : -1));
+                        })
+                        .finally(() => { comment._likeLoading = false; });
+                },
+                // 回复
+                toggleReply(commentId) {
+                    this.replyInputId = this.replyInputId === commentId ? null : commentId;
+                    this.replyText = '';
+                },
+                cancelReply() {
+                    this.replyInputId = null;
+                    this.replyText = '';
+                },
+                submitReply(comment) {
+                    if (!this.replyText.trim()) return;
+                    const payload = {
+                        content: this.replyText,
+                        parentId: comment.id,
+                        replyUserId: comment.userId
+                    };
+                    axios.post(`/api/post/${this.getPostId()}/comments`, payload)
+                        .then(response => {
+                            if (response.data.code === 1) {
+                                const newReply = response.data.data;
+                                if (!comment.subComments) comment.subComments = { records: [] };
+                                if (!comment.subComments.records) comment.subComments.records = [];
+                                comment.subComments.records.push(newReply);
+                                this.postDetail.commentCount = (this.postDetail.commentCount || 0) + 1;
+                                this.replyText = '';
+                                this.replyInputId = null;
+                                this.showToast('回复成功', 'success');
+                            } else {
+                                this.showToast(response.data.msg || '回复失败', 'error');
+                            }
+                        })
+                        .catch(() => this.showToast('回复失败', 'error'));
+                },
+                // 发表评论
+                async submitComment() {
+                    if (!this.newCommentText.trim() && !this.commentImageFile) return;
+                    try {
+                        let imageUrls = [];
+                        if (this.commentImageFile) {
+                            const form = new FormData();
+                            form.append('file', this.commentImageFile);
+                            const upload = await fetch('/api/posts/images', {
+                                method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` }, body: form
+                            });
+                            const result = await upload.json();
+                            if (!upload.ok || result.errno !== 0) throw new Error('图片上传失败');
+                            imageUrls = [result.data.url];
+                        }
+                        const response = await axios.post(`/api/post/${this.getPostId()}/comments`, {
+                            content: this.newCommentText.trim() || '图片', imageUrls
+                        });
+                        if (response.data.code !== 1) throw new Error(response.data.msg || '发布失败');
+                        this.comments.unshift(response.data.data);
+                        this.newCommentText = '';
+                        this.removeCommentImage();
+                        this.postDetail.commentCount = (this.postDetail.commentCount || 0) + 1;
+                        this.showToast('评论已发布', 'success');
+                    } catch (error) {
+                        this.showToast(error.response?.data?.message || error.message || '发布失败', 'error');
+                    }
+                },
+                // 子评论查看更多
+                hasMoreSubComments(comment) {
+                    if (!comment.subComments) return false;
+                    const page = comment.subComments;
+                    return page.hasNext || (page.total > (page.current || 1) * (page.size || 5));
+                },
+                loadSubComments(comment) {
+                    if (this.subCommentLoading[comment.id]) return;
+                    this.subCommentLoading = { ...this.subCommentLoading, [comment.id]: true };
+                    const page = this.subCommentPages[comment.id] || 1;
+                    const nextPage = page + 1;
+                    axios.get(`/api/post/${comment.id}/subComments`, { params: { current: nextPage, size: 5 } })
+                        .then(response => {
+                            const data = response.data;
+                            const records = data.records || [];
+                            if (comment.subComments && comment.subComments.records) {
+                                comment.subComments.records = comment.subComments.records.concat(records);
+                            } else {
+                                comment.subComments = { records };
+                            }
+                            comment.subComments.current = data.current;
+                            comment.subComments.total = data.total;
+                            comment.subComments.hasNext = data.hasNext;
+                            this.subCommentPages = { ...this.subCommentPages, [comment.id]: nextPage };
+                        })
+                        .catch(() => { })
+                        .finally(() => {
+                            this.subCommentLoading = { ...this.subCommentLoading, [comment.id]: false };
+                        });
+                },
+                // 表情
+                toggleEmojiPicker() {
+                    this.showEmojiPicker = !this.showEmojiPicker;
+                },
+                insertEmoji(emoji) {
+                    this.newCommentText += emoji;
+                    this.showEmojiPicker = false;
+                },
+                // 图片
+                onCommentImageSelected(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    this.commentImageFile = file;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => { this.commentImagePreview = ev.target.result; };
+                    reader.readAsDataURL(file);
+                },
+                removeCommentImage() {
+                    this.commentImagePreview = null;
+                    this.commentImageFile = null;
+                    if (this.$refs.commentImageInput) this.$refs.commentImageInput.value = '';
+                },
+                loadAuthorFollowState() {
+                    if (!localStorage.getItem('token')) { this.authorFollowed = false; return; }
+                    if (!this.postAuthor.id || String(this.postAuthor.id) === String(this.currentUserId)) {
+                        this.authorFollowed = false; return;
+                    }
+                    axios.get(`/api/user/follow/status/${this.postAuthor.id}`)
+                        .then(response => {
+                            if (response.data.code === 1) {
+                                this.authorFollowed = !!response.data.data;
+                            }
+                        }).catch(() => { });
+                },
+                toggleAuthorFollow() {
+                    if (!this.postAuthor.id) { this.showToast('缺少作者信息'); return; }
+                    if (String(this.postAuthor.id) === String(this.currentUserId)) { this.showToast('不能关注自己'); return; }
+                    const request = this.authorFollowed
+                        ? axios.delete(`/api/user/follow/${this.postAuthor.id}`)
+                        : axios.post(`/api/user/follow/${this.postAuthor.id}`);
+                    request.then(response => {
+                        if (response.data.code !== 1) { this.showToast(response.data.msg || '关注操作失败'); return; }
+                        this.authorFollowed = !this.authorFollowed;
+                        this.hoverFollowState = this.authorFollowed;
+                        const delta = this.authorFollowed ? 1 : -1;
+                        this.postAuthor.followerCount = Math.max((Number(this.postAuthor.followerCount) || 0) + delta, 0);
+                        if (this.postDetail.author) this.postDetail.author.followerCount = this.postAuthor.followerCount;
+                        this.showToast(this.authorFollowed ? '已关注' : '已取消关注');
+                    }).catch(() => this.showToast('关注操作失败'));
+                },
+                goToProfile(id) { window.open(`../user/profile.html?userId=${id}`, '_blank'); },
+
+                autoLoadSubComments() {
+                    const scrolled = window.innerHeight + window.scrollY;
+                    for (const comment of this.comments) {
+                        if (this.hasMoreSubComments(comment) && !this.subCommentLoading[comment.id]) {
+                            this.loadSubComments(comment);
+                            return;
+                        }
+                    }
+                },
+                scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); },
+                goSearch(keyword) { window.location.href = `../post/search.html?q=${encodeURIComponent(keyword)}`; },
+                toggleLike(post) {
+                    if (this._likeLoading) return;
+                    this._likeLoading = true;
+                    axios.post(`/api/post/like/${this.postDetail.id}`)
+                        .then(response => {
+                            const liked = response.data.code == 1;
+                            this.postDetail.liked = liked;
+                            this.postLiked = liked;
+                            this.postDetail.likeCount = Math.max(0, (this.postDetail.likeCount || 0) + (liked ? 1 : -1));
+                            this.showToast(liked ? '点赞成功！' : '已取消点赞', liked ? 'success' : 'error');
+                        }).catch(() => this.showToast('点赞失败', 'error'))
+                        .finally(() => { this._likeLoading = false; });
+                },
+                toggleFavorite() {
+                    if (this._favLoading) return;
+                    this._favLoading = true;
+                    axios.post(`/api/post/favorite/${this.postDetail.id}`)
+                        .then(response => {
+                            const favored = response.data.code == 1;
+                            this.postDetail.favorited = favored;
+                            this.postFaved = favored;
+                            this.postDetail.favoriteCount = Math.max(0, (this.postDetail.favoriteCount || 0) + (favored ? 1 : -1));
+                            this.showToast(favored ? '收藏成功！' : '已取消收藏', favored ? 'success' : 'error');
+                        }).catch(() => this.showToast('收藏失败', 'error'))
+                        .finally(() => { this._favLoading = false; });
+                },
+                readStoredJson(key) {
+                    try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; }
+                },
+                handleScroll() { this.scrollY = window.scrollY; if (this.pageResult.hasNext && !this.loadingMoreComments) { const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 500; if (nearBottom) this.loadMoreComments(); } this.autoLoadSubComments(); },
+                handleDocumentClick(e) {
+                    if (!this.showEmojiPicker) return;
+                    const el = this.$el;
+                    if (!el) return;
+                    const panel = el.querySelector('.emoji-panel');
+                    const btn = el.querySelector('.comment-input-wrapper .emoji-btn');
+                    if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+                        this.showEmojiPicker = false;
+                    }
+                },
+                backWithChoose(choose) { window.location.href = `../index.html?choose=${choose}`; },
+                getHotTopics() {
+                    axios.get('/api/home/getHotTags')
+                        .then(response => {
+                            if (response.data.code === 1) this.hotTopics = response.data.data;
+                        }).catch(() => { });
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

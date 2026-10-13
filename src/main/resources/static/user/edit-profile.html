@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>紫荆论坛 - 编辑个人资料</title>
+    <link rel="icon" type="image/x-icon" href="../img/zj_icon.ico" />
+    <link rel="stylesheet" href="../css/common.css" />
+    <style>
+        .edit-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 16px;
+        }
+
+        .edit-card {
+            background: var(--card, #fff);
+            border: 1px solid var(--line, #e7e3f3);
+            border-radius: var(--radius, 12px);
+            padding: 24px;
+            box-shadow: 0 6px 18px rgba(99, 70, 190, 0.03);
+        }
+
+        .edit-header {
+            margin-bottom: 24px;
+        }
+
+        .edit-header h2 {
+            font-size: 22px;
+            color: #1e1e2a;
+            margin: 0 0 8px;
+        }
+
+        .edit-header p {
+            color: var(--muted, #7d8296);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2e2e3a;
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper input,
+        .input-wrapper select,
+        .input-wrapper textarea {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--line, #e7e3f3);
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fff;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        .input-wrapper input:focus,
+        .input-wrapper select:focus,
+        .input-wrapper textarea:focus {
+            border-color: var(--purple-500, #7b4ef6);
+            box-shadow: 0 0 0 3px rgba(123, 78, 246, 0.12);
+        }
+
+        .input-wrapper textarea {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.6;
+        }
+
+        .form-actions {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel {
+            border: 1px solid var(--line, #e7e3f3);
+            background: #fff;
+            color: #1e1e2a;
+        }
+
+        .btn-cancel:hover {
+            background: var(--purple-50, #f6f2ff);
+            border-color: var(--purple-300, #cbbcff);
+            color: var(--purple-600, #6a3df0);
+        }
+
+        .btn-save {
+            border: none;
+            background: linear-gradient(90deg, var(--purple-500, #7b4ef6), var(--purple-600, #6a3df0));
+            color: #fff;
+        }
+
+        .btn-save:hover {
+            opacity: 0.92;
+        }
+
+        .btn-save:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1000;
+            color: white;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast.success {
+            background: #2b9e5ecc;
+        }
+
+        .toast.error {
+            background: #e5484dcc;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .avatar-upload {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--line, #e7e3f3);
+            border-radius: 8px;
+            background: #faf9ff;
+        }
+
+        .avatar-preview {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px var(--line, #e7e3f3);
+            flex: 0 0 auto;
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .avatar-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .avatar-upload label {
+            width: fit-content;
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: #fff;
+            border: 1px solid var(--line, #e7e3f3);
+            color: #2e2e3a;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .avatar-upload label:hover {
+            border-color: var(--purple-300, #cbbcff);
+            color: var(--purple-600, #6a3df0);
+        }
+
+        .avatar-upload input[type="file"] {
+            display: none;
+        }
+
+        .avatar-status {
+            min-height: 20px;
+            color: var(--muted, #7d8296);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 520px) {
+            .avatar-upload {
+                align-items: flex-start;
+            }
+
+            .avatar-preview {
+                width: 72px;
+                height: 72px;
+            }
+        }
+    </style>
+    <script src="../js/vue.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script src="../js/axios-config.js"></script>
+</head>
+<body>
+    <div id="topbar-container"></div>
+
+    <div id="app">
+        <div class="edit-container">
+            <div class="edit-card">
+                <div class="edit-header">
+                    <h2>编辑个人资料</h2>
+                    <p>修改你的个人信息</p>
+                </div>
+
+                <form @submit.prevent="submitForm">
+                    <div class="avatar-upload">
+                        <div class="avatar-preview">
+                            <img :src="avatarPreview" alt="用户头像">
+                        </div>
+                        <div class="avatar-actions">
+                            <label for="avatar-upload">
+                                {{ avatarUploading ? '上传中...' : '更换头像' }}
+                            </label>
+                            <input
+                                type="file"
+                                id="avatar-upload"
+                                accept="image/jpeg,image/png,image/gif,image/webp"
+                                :disabled="avatarUploading"
+                                @change="handleAvatarUpload"
+                            >
+                            <div class="avatar-status">{{ avatarStatus }}</div>
+                        </div>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="username">昵称</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="username" v-model="form.username" placeholder="请输入昵称" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gender">性别</label>
+                        <div class="input-wrapper">
+                            <select id="gender" v-model.number="form.gender">
+                                <option :value="0">保密</option>
+                                <option :value="1">男</option>
+                                <option :value="2">女</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signature">个人签名</label>
+                        <div class="input-wrapper">
+                            <textarea id="signature" v-model="form.signature" placeholder="请输入个人签名"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="major">专业</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="major" v-model="form.major" placeholder="请输入专业" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">邮箱</label>
+                        <div class="input-wrapper"><input type="email" id="email" v-model="form.email" required placeholder="请输入邮箱" /></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="mobile">手机号</label>
+                        <div class="input-wrapper"><input type="tel" id="mobile" v-model="form.mobile" placeholder="可选" /></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="birthday">生日</label>
+                        <div class="input-wrapper">
+                            <input type="date" id="birthday" v-model="form.birthday" />
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" @click="cancelEdit">取消</button>
+                        <button type="submit" class="btn btn-save" :disabled="loading || avatarUploading">
+                            {{ loading ? '保存中...' : (avatarUploading ? '头像上传中...' : '保存更改') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div v-if="toast.show" :class="['toast', toast.type]">
+            {{ toast.message }}
+        </div>
+    </div>
+
+    <script src="../components/TopBar.js"></script>
+    <script>
+        new Vue({
+            el: '#topbar-container',
+            template: '<top-bar></top-bar>'
+        });
+
+        new Vue({
+            el: '#app',
+            data: {
+                userId: null,
+                form: {
+                    username: '',
+                    gender: 0,
+                    signature: '',
+                    major: '',
+                    avatar: '',
+                    birthday: '',
+                    email: '',
+                    mobile: ''
+                },
+                defaultAvatar: '../img/头像示例.jpg',
+                avatarPreview: '../img/头像示例.jpg',
+                avatarUploading: false,
+                avatarStatus: '支持 jpg、jpeg、png、gif、webp，最大 20MB',
+                loading: false,
+                toast: {
+                    show: false,
+                    message: '',
+                    type: 'error'
+                }
+            },
+            mounted() {
+                const urlParams = new URLSearchParams(window.location.search);
+                let userId = urlParams.get('userId');
+
+                if (!userId || userId === 'null' || userId === '') {
+                    userId = localStorage.getItem('userId');
+                }
+
+                this.userId = userId;
+
+                if (!this.userId || this.userId === 'null') {
+                    this.showToast('请先登录', 'error');
+                    return;
+                }
+
+                this.getUserInfo();
+                axios.get('/api/accounts/me/contact').then(response => {
+                    this.form.email = response.data.data.email || '';
+                    this.form.mobile = response.data.data.mobile || '';
+                }).catch(() => {});
+            },
+
+            /*
+            mounted() {
+                // 原来的 mounted 逻辑保留注释，不删除
+                const urlParams = new URLSearchParams(window.location.search);
+                let userId = urlParams.get('userId');
+                if (userId === 'null') {
+                    userId = localStorage.getItem('userId');
+                }
+                this.userId = userId || localStorage.getItem('userId');
+                this.getUserInfo();
+            },
+            */
+
+            methods: {
+                getUserInfo() {
+                    axios.get(`/api/user/info/${this.userId}`)
+                        .then(response => {
+                            if (response.data.code === 1) {
+                                const userInfo = response.data.data;
+                                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                                this.form = {
+                                    email: this.form.email,
+                                    mobile: this.form.mobile,
+                                    username: userInfo.username || '',
+                                    gender: userInfo.gender || 0,
+                                    signature: userInfo.signature || '',
+                                    major: userInfo.major || '',
+                                    avatar: userInfo.avatar || '',
+                                    birthday: userInfo.birthday || ''
+                                };
+                                this.avatarPreview = this.form.avatar || this.defaultAvatar;
+                            } else {
+                                this.showToast(response.data.msg || '获取用户信息失败', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('获取用户信息失败:', error);
+                            this.showToast('网络错误，请检查后端服务', 'error');
+                        });
+                },
+
+                handleAvatarUpload(e) {
+                    const file = e.target.files[0];
+                    if (!file) {
+                        return;
+                    }
+
+                    if (!this.userId || this.userId === 'null') {
+                        this.showToast('请先登录', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+
+                    const allowTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                    const allowExtensions = /\.(jpg|jpeg|png|gif|webp)$/i;
+                    if (!allowTypes.includes(file.type) && !allowExtensions.test(file.name)) {
+                        this.showToast('只支持 jpg、jpeg、png、gif、webp 格式的图片', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+
+                    const maxSize = 20 * 1024 * 1024;
+                    if (file.size > maxSize) {
+                        this.showToast('头像文件不能超过 20MB', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+
+                    const previousPreview = this.avatarPreview;
+                    const previewUrl = URL.createObjectURL(file);
+                    this.avatarPreview = previewUrl;
+                    this.avatarUploading = true;
+                    this.avatarStatus = '头像上传中...';
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    axios.post(`/api/user/info/${this.userId}/avatar`, formData)
+                        .then(response => {
+                            if (response.data.code === 1) {
+                                const avatarUrl = response.data.data;
+                                this.form.avatar = avatarUrl;
+                                this.avatarPreview = avatarUrl || this.avatarPreview;
+                                this.avatarStatus = '头像上传成功，保存资料后一起生效';
+
+                                const localUserInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                                localStorage.setItem('userInfo', JSON.stringify({
+                                    ...localUserInfo,
+                                    avatar: avatarUrl
+                                }));
+                                this.showToast('头像上传成功', 'success');
+                            } else {
+                                this.avatarPreview = this.form.avatar || previousPreview || this.defaultAvatar;
+                                this.avatarStatus = '头像上传失败，请重新选择';
+                                this.showToast(response.data.msg || '头像上传失败', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('头像上传失败:', error);
+                            this.avatarPreview = this.form.avatar || previousPreview || this.defaultAvatar;
+                            this.avatarStatus = '头像上传失败，请检查后端服务';
+                            this.showToast('头像上传失败，请检查后端服务', 'error');
+                        })
+                        .finally(() => {
+                            URL.revokeObjectURL(previewUrl);
+                            this.avatarUploading = false;
+                            e.target.value = '';
+                        });
+                },
+
+                submitForm() {
+                    if (!this.userId || this.userId === 'null') {
+                        this.showToast('请先登录', 'error');
+                        return;
+                    }
+
+                    if (this.avatarUploading) {
+                        this.showToast('头像正在上传，请稍后再保存', 'error');
+                        return;
+                    }
+
+                    this.loading = true;
+
+                    axios.put('/api/accounts/me/contact', { email: this.form.email, mobile: this.form.mobile })
+                        .then(() => axios.put(`/api/user/info/${this.userId}`, this.form))
+                        .then(response => {
+                            if (response.data.code === 1) {
+                                localStorage.setItem('userInfo', JSON.stringify(response.data.data));
+                                this.showToast('个人信息更新成功', 'success');
+                                setTimeout(() => {
+                                    window.location.href = `profile.html?userId=${this.userId}`;
+                                }, 1000);
+                            } else {
+                                this.showToast(response.data.msg || '更新失败', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('更新用户信息失败:', error);
+                            this.showToast('网络错误，请检查后端服务', 'error');
+                        })
+                        .finally(() => {
+                            this.loading = false;
+                        });
+                },
+
+                cancelEdit() {
+                    const targetUserId = this.userId || localStorage.getItem('userId');
+                    if (targetUserId && targetUserId !== 'null') {
+                        window.location.href = `profile.html?userId=${targetUserId}`;
+                        return;
+                    }
+                    window.location.href = '../login.html';
+                },
+
+                showToast(message, type = 'error') {
+                    this.toast = {
+                        show: true,
+                        message,
+                        type
+                    };
+
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, 3000);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

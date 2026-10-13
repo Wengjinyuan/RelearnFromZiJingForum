@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 25MB
   application:
     name: rebuilt-zijing-forum
   jackson:
@@ -14,11 +18,33 @@ spring:
     init:
       mode: always
       encoding: UTF-8
+  rabbitmq:
+    publisher-confirm-type: correlated
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 500ms
+
+forum:
+  demo-data:
+    enabled: true
+  rabbit:
+    enabled: false
+  redis:
+    enabled: false
+  search:
+    elasticsearch:
+      enabled: false
+      url: ${FORUM_ES_URL:http://localhost:9200}
+      api-key: ${FORUM_ES_API_KEY:}
 
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
-
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 security:
   jwt:
     # 仅用于本地练习。部署时必须通过 ZIJING_JWT_SECRET 覆盖，长度至少 32 字节。

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>紫荆论坛 · 关注列表</title>
+    <link rel="icon" type="image/x-icon" href="../img/zj_icon.ico">
+    <link rel="stylesheet" href="../css/common.css">
+    <script src="../js/vue.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script src="../js/axios-config.js"></script>
+    <style>
+        .list-wrap { max-width: 900px; margin: 20px auto; padding: 0 16px; }
+        .list-title { font-size: 22px; font-weight: 800; margin-bottom: 14px; color: #1e1e2a; }
+        .user-item { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; cursor: pointer; }
+        .user-item img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
+        .name { font-weight: 800; color: #1e1e2a; }
+        .meta { margin-top: 4px; color: var(--muted); font-size: 13px; }
+        .empty { color: var(--muted); padding: 24px; text-align: center; }
+    </style>
+</head>
+<body>
+<div id="topbar-container"></div>
+<div id="app" class="list-wrap">
+    <div class="list-title">关注列表<span v-if="total !== null">（{{ total }}）</span></div>
+    <div class="user-item" v-for="user in users" :key="user.id" @click="viewUser(user.id)">
+        <img :src="resolveAvatarUrl(user.avatar)" @error="handleAvatarError" alt="头像">
+        <div>
+            <div class="name">{{ user.username }}</div>
+            <div class="meta">{{ user.major || '未填写专业' }} · 粉丝 {{ user.followerCount || 0 }}</div>
+        </div>
+    </div>
+    <div v-if="!loading && users.length === 0" class="empty">暂无关注</div>
+</div>
+<script src="../components/TopBar.js"></script>
+<script>
+    new Vue({ el: '#topbar-container', template: '<top-bar></top-bar>' });
+    new Vue({
+        el: '#app',
+        data: { users: [], total: null, loading: false, defaultAvatar: '../img/头像示例.jpg' },
+        mounted() { this.loadUsers(); },
+        methods: {
+            loadUsers() {
+                const userId = new URLSearchParams(window.location.search).get('userId') || localStorage.getItem('userId');
+                this.loading = true;
+                axios.get(`/api/user/${userId}/following`, { params: { page: 1, size: 1000 } })
+                    .then(response => {
+                        this.users = response.data.records || [];
+                        this.total = Number(response.data.total) || this.users.length;
+                    })
+                    .finally(() => { this.loading = false; });
+            },
+            resolveAvatarUrl(avatar) { return avatar || this.defaultAvatar; },
+            handleAvatarError(event) { event.target.src = this.defaultAvatar; },
+            viewUser(userId) { window.location.href = `profile.html?userId=${userId}`; }
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>搜索结果 · 紫荆论坛</title>
+    <link rel="icon" type="image/x-icon" href="../img/zj_icon.ico">
+    <link rel="stylesheet" href="../css/common.css">
+    <style>
+        html {
+            /*强制显示滚动条 */
+            overflow-y: scroll;
+        }
+
+        /*!* ai 搜索 *!*/
+        /*.ai-search {*/
+        /*    background-color: #f9f9fc;*/
+        /*    border-radius: var(--radius);*/
+        /*    padding: 18px;*/
+        /*    margin-bottom: 16px;*/
+        /*    height: 50px;*/
+        /*}*/
+
+        /* 顶部占位(顶栏由组件动态加载) 保持与原站一致 */
+        .search-main {
+            max-width: 1180px;
+            margin: 24px auto 36px;
+            padding: 0 16px;
+        }
+
+        /* 面包屑 + 关键词区 */
+        .search-header {
+            margin-bottom: 12px;
+        }
+
+        .search-keyword {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1e1e2a;
+            margin-top: 4px;
+        }
+
+        .search-keyword span {
+
+            color: var(--purple-600);
+            padding: 2px 12px;
+            border-radius: 40px;
+
+        }
+
+        /* 双选项卡 (tab 切换) */
+        .search-tabs {
+            display: flex;
+            gap: 12px;
+            border-bottom: 2px solid var(--line);
+            margin: 16px 0 16px 0;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--purple-600);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            border-radius: 2px;
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: var(--purple-500);
+            background: var(--purple-50);
+            border-radius: 30px;
+        }
+
+        /* 筛选栏 (帖子专用) */
+        .filter-sort-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+        }
+
+        .sort-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .sort-chip {
+            background: transparent;
+            border: 1px solid var(--line);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sort-chip.active {
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 2px 6px rgba(123, 78, 246, 0.2);
+        }
+
+        .sort-chip:hover:not(.active) {
+            border-color: var(--purple-200);
+            color: var(--purple-600);
+            background: var(--purple-50);
+        }
+
+        .result-stats {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        /* 帖子卡片 (完全复刻 index 普通帖子样式) */
+        .post-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: box-shadow 0.2s, transform 0.1s;
+        }
+
+        .post-card:hover {
+            box-shadow: 0 8px 20px rgba(99, 70, 190, 0.08);
+        }
+
+        .post-meta {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .post-meta img {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--purple-100);
+        }
+
+        .author-info {
+            flex: 1;
+        }
+
+        .author-name {
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: var(--purple-50);
+            color: var(--purple-600);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .tag.essence {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .post-time {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .post-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 8px 0 6px;
+            color: #1e1e2a;
+            line-height: 1.4;
+        }
+
+        .post-summary {
+            font-size: 14px;
+            color: #5a5e73;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .post-thumb {
+            display: flex;
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .post-thumb img {
+            width: 110px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid var(--line);
+        }
+
+        .post-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 14px;
+            padding-top: 8px;
+            border-top: 1px solid var(--line);
+        }
+
+        .interact-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .interact-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--muted);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .interact-item:hover {
+            color: var(--purple-600);
+        }
+
+        .btn-like {
+            width: 45px;
+            background: transparent;
+            border: none;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 13px;
+            justify-content: space-evenly;
+        }
+
+        .btn-like.active {
+            color: #d23465;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 16px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .action-item {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+
+
+        /* 用户卡片 (简约现代) */
+        .user-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: box-shadow 0.2s;
+        }
+
+        .user-card-left {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex: 1;
+        }
+
+        .user-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--purple-100);
+        }
+
+        .user-info h4 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .user-bio {
+            font-size: 13px;
+            color: var(--muted);
+            max-width: 280px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-stats {
+            display: flex;
+            gap: 16px;
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .user-stats span strong {
+            color: var(--purple-600);
+            font-weight: 700;
+        }
+
+        .follow-user-btn {
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 13px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            min-width: 80px;
+        }
+
+        .follow-user-btn.following {
+            background: white;
+            color: var(--muted);
+            border: 1px solid var(--line);
+            box-shadow: none;
+        }
+
+        .follow-user-btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.02);
+        }
+
+        .follow-user-btn.following:hover {
+            background: #f5f3ff;
+            color: var(--purple-600);
+            border-color: var(--purple-200);
+        }
+
+        /* 空状态 */
+        .empty-state {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 56px 20px;
+            text-align: center;
+            border: 1px solid var(--line);
+            color: var(--muted);
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .empty-state small {
+            font-size: 13px;
+            color: #a5a5bd;
+        }
+
+        /* 加载更多 */
+        .loading-more {
+            text-align: center;
+            padding: 20px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        /* 返回顶部 */
+        .back-to-top {
+            position: fixed;
+            right: 40px;
+            bottom: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            color: #fff;
+            border: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(103, 72, 193, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(12px);
+            transition: all 0.2s;
+            z-index: 120;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* 响应式 */
+        @media (max-width: 760px) {
+            .user-card-left {
+                flex-wrap: wrap;
+            }
+
+            .user-stats {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .sort-group {
+                margin-bottom: 8px;
+            }
+
+            .filter-sort-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                border-radius: 20px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .search-main {
+                padding: 0 12px;
+            }
+
+            .post-thumb img {
+                width: 80px;
+                height: 70px;
+            }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 14px;
+            z-index: 200;
+            animation: fadeInOut 2s ease;
+        }
+
+        @keyframes fadeInOut {
+            0% {
+                opacity: 0;
+                bottom: 20px;
+            }
+
+            15% {
+                opacity: 1;
+                bottom: 30px;
+            }
+
+            85% {
+                opacity: 1;
+                bottom: 30px;
+            }
+
+            100% {
+                opacity: 0;
+                bottom: 20px;
+            }
+        }
+    </style>
+    <script src="../js/vue.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script src="../js/axios-config.js"></script>
+</head>
+
+<body>
+    <div id="topbar-container"></div>
+
+    <div id="searchApp">
+        <div class="search-main">
+            <!-- 面包屑 -->
+            <div class="search-header">
+                <div class="search-keyword">
+                    关于“<span>{{ keyword || '搜索内容' }}</span>”的搜索结果
+                </div>
+            </div>
+
+            <!-- Tab 切换：帖子 / 用户 -->
+            <div class="search-tabs">
+                <div class="tab-btn" :class="{ active: activeTab === 'post' }" @click="switchTab('post')">帖子</div>
+                <div class="tab-btn" :class="{ active: activeTab === 'user' }" @click="switchTab('user')">用户</div>
+            </div>
+
+            <!-- 帖子区域：筛选栏 + 列表 -->
+            <div v-if="activeTab === 'post'">
+                <div class="ai-search">
+                </div>
+                <div class="filter-sort-bar">
+                    <div class="sort-group">
+                        <button v-for="opt in sortOptions" :key="opt.value" class="sort-chip"
+                            :class="{ active: postSort === opt.value }" @click="changePostSort(opt.value)">
+                            {{ opt.label }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 帖子卡片列表 -->
+                <div v-if="postList.length > 0">
+                    <div v-for="post in postList" :key="post.id" class="post-card" @click="viewPostDetail(post.id)">
+                        <div class="post-meta">
+                            <img :src="post.avatar || defaultAvatar" alt="avatar"
+                                @click.stop="viewUserProfile(post.userId)">
+                            <div class="author-info">
+                                <div class="author-name">
+                                    {{ post.username || '匿名用户' }}
+                                    <span v-if="post.isEssence" class="tag essence">精华</span>
+                                    <span v-if="post.category" class="tag">{{ post.category }}</span>
+                                </div>
+                                <div class="post-time">{{ formatTimeAgo(post.createTime) }} · 浏览 {{
+                                    formatNumber(post.viewCount) }}</div>
+                            </div>
+                        </div>
+
+                        <div class="post-title" v-html="post.title"></div>
+                        <div class="post-summary" v-html="post.summary"></div>
+                        <!-- 缩略图（如果有） -->
+                        <div class="post-thumb" v-if="post.coverImage || (post.images && post.images[0])">
+                            <img :src="post.coverImage || post.images[0]" alt="preview">
+                        </div>
+                        <div class="post-footer">
+                            <div class="interact-group">
+                                <button class="btn-like" :class="{ active: post.liked }" @click.stop="toggleLike(post)">
+                                    <span class="icon">
+                                        <svg v-if="!post.liked" t="1774013373201" class="icon" viewBox="0 0 1024 1024"
+                                            version="1.1" p-id="6601" width="16" height="16">
+                                            <path
+                                                d="M512 928c-28.928 0-57.92-12.672-86.624-41.376L106.272 564C68.064 516.352 32 471.328 32 384c0-141.152 114.848-256 256-256 53.088 0 104 16.096 147.296 46.592 14.432 10.176 17.92 30.144 7.712 44.608-10.176 14.432-30.08 17.92-44.608 7.712C366.016 204.064 327.808 192 288 192c-105.888 0-192 86.112-192 192 0 61.408 20.288 90.112 59.168 138.688l315.584 318.816C486.72 857.472 499.616 863.808 512 864c12.704 0.192 24.928-6.176 41.376-22.624l316.672-319.904C896.064 493.28 928 445.696 928 384c0-105.888-86.112-192-192-192-48.064 0-94.08 17.856-129.536 50.272l-134.08 134.112c-12.512 12.512-32.736 12.512-45.248 0s-12.512-32.736 0-45.248l135.104-135.136C610.56 151.808 671.904 128 736 128c141.152 0 256 114.848 256 256 0 82.368-41.152 144.288-75.68 181.696l-317.568 320.8C569.952 915.328 540.96 928 512 928z"
+                                                p-id="6602" fill="#8b8fa3"></path>
+                                        </svg>
+                                        <svg v-if="post.liked" t="1774013407278" class="icon" viewBox="0 0 1024 1024"
+                                            p-id="6814" width="16" height="16">
+                                            <path
+                                                d="M736 128c-65.952 0-128.576 25.024-176.384 70.464-4.576 4.32-28.672 28.736-47.328 47.68L464.96 199.04C417.12 153.216 354.272 128 288 128c-141.152 0-256 114.848-256 256 0 82.432 41.184 144.288 76.48 182.496l316.896 320.128C450.464 911.68 478.304 928 512 928c33.696 0 61.568-16.32 86.752-41.504l316.736-320 2.208-2.464C955.904 516.384 992 471.392 992 384 992 242.848 877.152 128 736 128z"
+                                                p-id="6815" fill="#d23465"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="count">{{ formatNumber(post.likeCount) }}</span>
+                                </button>
+                                <div class="interact-item"><span class="icon">
+                                        <svg t="1774088679557" class="icon" viewBox="0 0 1024 1024" width="16"
+                                            height="16">
+                                            <path
+                                                d="M512 928c-8.192 0-16.384-3.136-22.624-9.376l-96-96c-12.512-12.512-12.512-32.736 0-45.248s32.736-12.512 45.248 0L512 850.752l73.376-73.376C591.36 771.36 599.488 768 608 768l224 0c17.664 0 32-14.336 32-32L864 224c0-17.632-14.336-32-32-32L192 192C174.368 192 160 206.368 160 224l0 512c0 17.664 14.368 32 32 32l96 0c17.664 0 32 14.304 32 32s-14.336 32-32 32L192 832c-52.928 0-96-43.072-96-96L96 224c0-52.928 43.072-96 96-96l640 0c52.928 0 96 43.072 96 96l0 512c0 52.928-43.072 96-96 96l-210.752 0-86.624 86.624C528.384 924.864 520.192 928 512 928z"
+                                                p-id="6746" fill="#8b8fa3"></path>
+                                            <path
+                                                d="M336 512C309.536 512 288 490.464 288 464S309.536 416 336 416s48 21.536 48 48S362.464 512 336 512z"
+                                                p-id="6747" fill="#8b8fa3"></path>
+                                            <path
+                                                d="M528 512c-26.464 0-48-21.536-48-48s21.536-48 48-48 48 21.536 48 48S554.464 512 528 512z"
+                                                p-id="6748" fill="#8b8fa3"></path>
+                                            <path
+                                                d="M720 512c-26.464 0-48-21.536-48-48s21.536-48 48-48 48 21.536 48 48S746.464 512 720 512z"
+                                                p-id="6749" fill="#8b8fa3"></path>
+                                        </svg>
+                                    </span>
+                                    <span>{{ formatNumber(post.commentCount) }}</span>
+                                </div>
+                                <div class="interact-item" @click.stop="toggleFavorite(post)"><span class="icon">
+                                        <svg v-if="!post.favorited" t="1774013916008" class="icon"
+                                            viewBox="0 0 1024 1024" version="1.1" width="16" height="16">
+                                            <path
+                                                d="M767.104 959.936c-5.344 0-10.688-1.344-15.52-4.032l-241.312-133.856-241.824 133.024c-10.72 5.92-23.904 5.152-33.888-1.92-10.016-7.072-15.104-19.264-13.12-31.328l46.88-284.736-196.448-202.08c-8.256-8.512-11.168-20.928-7.456-32.192 3.68-11.296 13.312-19.616 25.024-21.632l155.072-26.592c17.632-2.944 33.984 8.736 36.96 26.144 2.976 17.408-8.704 33.952-26.144 36.96l-95.168 16.32 165.344 170.08c7.072 7.296 10.272 17.504 8.64 27.488l-38.816 235.68 199.616-109.824c9.632-5.312 21.344-5.312 30.944 0.064l199.168 110.464-38.016-235.776c-1.632-10.016 1.632-20.224 8.704-27.456l164.672-168.256-225.664-34.816c-10.56-1.632-19.584-8.416-24.128-18.08l-99.2-212.384-100.064 211.84c-7.552 16-26.624 22.816-42.624 15.264-15.968-7.552-22.816-26.624-15.264-42.624l129.152-273.44c5.312-11.2 16.576-18.336 28.928-18.336 0 0 0.032 0 0.064 0 12.416 0.032 23.68 7.232 28.928 18.464l120.8 258.624 270.336 41.728c11.872 1.824 21.696 10.144 25.504 21.504 3.776 11.36 0.864 23.936-7.488 32.48l-196.928 201.216 45.92 284.864c1.952 12.096-3.2 24.256-13.216 31.296C780 958.016 773.568 959.936 767.104 959.936z"
+                                                p-id="7710" fill="#8b8fa3"></path>
+                                        </svg>
+                                        <svg v-if="post.favorited" t="1774088541079" class="icon"
+                                            viewBox="0 0 1024 1024" width="16" height="16">
+                                            <path
+                                                d="M957.216 404.32c-3.808-11.36-13.632-19.68-25.504-21.504l-270.336-41.728-120.8-258.624C535.328 71.232 524.032 64.032 511.648 64c0 0-0.032 0-0.064 0-12.384 0-23.648 7.136-28.928 18.336l-121.856 258.016-270.72 40.8c-11.872 1.792-21.728 10.048-25.568 21.408-3.84 11.36-0.992 23.936 7.36 32.512l196.448 202.08L221.44 921.952c-1.984 12.096 3.104 24.256 13.12 31.328 9.984 7.072 23.168 7.808 33.888 1.92l241.824-133.024 241.312 133.856C756.416 958.656 761.76 960 767.104 960c0.256 0 0.48 0 0.64 0 17.696 0 32-14.304 32-32 0-3.968-0.704-7.776-2.016-11.296l-44.896-278.688 196.928-201.248C958.08 428.224 960.992 415.68 957.216 404.32z"
+                                                p-id="6389" fill="#efb336"></path>
+                                        </svg>
+                                    </span><span>{{ formatNumber(post.favoriteCount) }}</span>
+                                </div>
+                            </div>
+                            <div class="action-group">
+                                <div class="action-item" @click.stop="viewPostDetail(post)">详情</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 加载更多-->
+                    <div v-if="postLoadingMore" class="loading-more">加载中...</div>
+                    <div v-if="!postHasMore && postList.length > 0" class="loading-more">—— 已经到底了 ——</div>
+                    <div v-if="postHasMore && !postLoadingMore" class="loading-more" @click="loadMorePosts">加载更多</div>
+                </div>
+                <div v-else-if="!postLoading" class="empty-state">
+                    <svg viewBox="0 0 1024 1024" width="80" height="80">
+                        <path
+                            d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64z m0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z"
+                            fill="#c7c7dd"></path>
+                        <path
+                            d="M512 288c-17.7 0-32 14.3-32 32v224c0 17.7 14.3 32 32 32s32-14.3 32-32V320c0-17.7-14.3-32-32-32z m0 352c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32z"
+                            fill="#c7c7dd"></path>
+                    </svg>
+                    <p>没有找到相关的帖子</p>
+                    <small>试试其他关键词或筛选条件~</small>
+                </div>
+            </div>
+
+            <!-- 用户区域 -->
+            <div v-if="activeTab === 'user'">
+                <div v-if="userList.length > 0">
+                    <div v-for="user in userList" :key="user.id" class="user-card" @click="viewUserProfile(user.id)" style="cursor:pointer;">
+                        <div class="user-card-left">
+                            <img :src="user.avatar || defaultAvatar" class="user-avatar">
+                            <div class="user-info">
+                                <h4>{{ user.username }}</h4>
+                                <div class="user-bio">{{ user.signature || user.bio || '这个人很懒，什么都没写~' }}</div>
+                            </div>
+                        </div>
+                        <button class="follow-user-btn" :class="{ following: user.isFollowed }"
+                            @click.stop="toggleFollowUser(user)">
+                            {{ user.isFollowed ? '已关注' : '+ 关注' }}
+                        </button>
+                    </div>
+                </div>
+                <div v-else class="empty-state">
+                    <svg viewBox="0 0 1024 1024" width="80" height="80">
+                        <path
+                            d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64z m0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z"
+                            fill="#c7c7dd"></path>
+                        <path
+                            d="M512 288c-17.7 0-32 14.3-32 32v224c0 17.7 14.3 32 32 32s32-14.3 32-32V320c0-17.7-14.3-32-32-32z m0 352c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32z"
+                            fill="#c7c7dd"></path>
+                    </svg>
+                    <p>没有找到相关用户</p>
+                    <small>试试不同的用户名~</small>
+                </div>
+            </div>
+        </div>
+        <button class="back-to-top" :class="{ show: showBackTop }" @click="scrollToTop">↑</button>
+        <div v-if="toastMsg" class="toast">{{ toastMsg }}</div>
+    </div>
+
+    <script src="../components/TopBar.js"></script>
+    <script>
+        new Vue({
+            el: '#topbar-container',
+            template: '<top-bar></top-bar>'
+        });
+
+        // 主 Vue 实例
+        new Vue({
+            el: '#searchApp',
+            data: {
+                keyword: '',          // 从 URL 获取
+                activeTab: 'post',        // post / user
+                postSort: 'relevance',
+                sortOptions: [
+                    { value: 'relevance', label: '综合排序' },
+                    { value: 'latest', label: '最新发布' },
+                    { value: 'most_viewed', label: '最多浏览' },
+                    { value: 'most_liked', label: '最多点赞' }
+                ],
+                // 帖子数据
+                postList: [],
+                postPage: 0,
+                postHasMore: true,
+                postLoading: false,
+                postLoadingMore: false,
+                // 用户数据
+                userList: [],
+                defaultAvatar: '../img/头像示例.jpg',
+                showBackTop: false,
+                toastMsg: ''
+            },
+            computed: {
+                // 可额外
+            },
+            mounted() {
+                // 获取 URL 参数 ?q=xxx
+                postLoadingMore = true;
+                const urlParams = new URLSearchParams(window.location.search);
+                const query = urlParams.get('q');
+                if (query && query.trim()) {
+                    this.keyword = query.trim();
+                } else {
+                    window.location.href = '../index.html';
+                }
+                this.performSearch();
+                window.addEventListener('scroll', this.handleScroll);
+            },
+            beforeDestroy() {
+                window.removeEventListener('scroll', this.handleScroll);
+            },
+            methods: {
+                goHome() {
+                    window.location.href = '../index.html';
+                },
+                switchTab(tab) {
+                    if (this.activeTab === tab) return;
+                    this.activeTab = tab;
+                    if (tab === 'post') {
+                        if (this.postList.length === 0) this.performSearch();
+                    } else {
+                        if (this.userList.length === 0) this.searchUsers();
+                    }
+                },
+                changePostSort(sort) {
+                    if (this.postSort === sort) return;
+                    this.postSort = sort;
+                    this.postPage = 0;
+                    this.postList = [];
+                    this.postHasMore = true;
+                    this.searchPosts();
+                },
+                // 搜索功能
+                performSearch() {
+                    if (this.activeTab === 'post') {
+                        this.searchPosts();
+                    } else {
+                        this.searchUsers();
+                    }
+                },
+                // 搜索帖子
+                searchPosts() {
+                    this.postLoading = true;
+                    axios.get('/api/post/search', {
+                        params: {
+                            keyword: this.keyword,
+                            current: this.postPage,
+                            size: 10,
+                            sort: this.postSort
+                        }
+                    })
+                        .then(response => {
+                            console.log('请求成功', response.data)
+                            this.postList = response.data.list
+                            this.postPag = response.data.current
+                            this.postHasMore = response.data.hasNext
+                        })
+                        .catch(error => {
+                            console.error('请求失败', error)
+                            if (error.response) {
+                                console.log('错误状态码', error.response.status)
+                                console.log('错误信息', error.response.data)
+                            }
+                        })
+                        .finally(() => {
+                            this.postLoading = false
+                            this.postLoadingMore = false
+                        })
+                },
+
+                searchUsers() {
+                    axios.get('/api/user/search', { params: { keyword: this.keyword, current: 1, size: 20 } })
+                        .then(res => {
+                            if (res.data && Array.isArray(res.data.list)) {
+                                this.userList = res.data.list;
+                            } else {
+                                this.userList = [];
+                            }
+                        })
+                        .catch(() => { this.userList = []; });
+                },
+                loadMorePosts() {
+                    if (this.postLoadingMore || !this.postHasMore) return;
+                    this.postLoadingMore = true;
+                    this.postPage++;
+                    axios.get('/api/post/search', { params: { keyword: this.keyword, current: this.postPage, size: 10, sort: this.postSort } })
+                        .then(res => {
+                            if (res.data && Array.isArray(res.data.list)) {
+                                const newPosts = res.data.list;
+                                this.postList = this.postList.concat(newPosts);
+                                this.postHasMore = res.data.hasNext;
+                            } else {
+                                this.postHasMore = false;
+                            }
+                        })
+                        .catch(() => { this.postHasMore = false; })
+                        .finally(() => { this.postLoadingMore = false; });
+                },
+                toggleFollowUser(user) {
+                    user.isFollowed = !user.isFollowed;
+                    this.showToast(user.isFollowed ? `已关注 ${user.username}` : `已取消关注`);
+                },
+                viewPostDetail(postId) {
+                    window.open(`./detail.html?postId=${postId}`, '_blank');
+                },
+                viewUserProfile(userId) {
+                    window.open(`../user/profile.html?userId=${userId}`, '_blank');
+                },
+                formatTimeAgo(dateTime) {
+                    if (!dateTime) return '刚刚';
+                    const target = new Date(dateTime);
+                    const now = new Date();
+                    const diff = Math.floor((now - target) / 1000);
+                    if (diff < 60) return '刚刚';
+                    if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
+                    if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
+                    if (diff < 172800) return '昨天';
+                    return `${target.getMonth() + 1}月${target.getDate()}日`;
+                },
+                formatNumber(num) {
+                    if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
+                    return num?.toString() || '0';
+                },
+                handleScroll() {
+                    this.showBackTop = window.scrollY > 240;
+                },
+                scrollToTop() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+                showToast(msg) {
+                    this.toastMsg = msg;
+                    setTimeout(() => { this.toastMsg = ''; }, 2000);
+                },
+                toggleLike(post) {
+                    if (post._likeLoading) return;
+                    post._likeLoading = true;
+                    axios.post(`/api/post/like/${post.id}`)
+                        .then(r => { const ok = r.data.code == 1; post.liked = ok; post.likeCount = Math.max(0, (post.likeCount || 0) + (ok ? 1 : -1)); })
+                        .catch(() => {})
+                        .finally(() => { post._likeLoading = false; });
+                },
+                toggleFavorite(post) {
+                    if (post._favLoading) return;
+                    post._favLoading = true;
+                    axios.post(`/api/post/favorite/${post.id}`)
+                        .then(r => { const ok = r.data.code == 1; post.favorited = ok; post.favoriteCount = Math.max(0, (post.favoriteCount || 0) + (ok ? 1 : -1)); })
+                        .catch(() => {})
+                        .finally(() => { post._favLoading = false; });
+                }
+
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -8,4 +8,8 @@ spring:
     init:
       mode: always
       encoding: UTF-8
+      schema-locations: classpath:schema-mysql.sql
 
+forum:
+  demo-data:
+    enabled: false

@@ -34,3 +34,16 @@ class BaselineApiTest {
                 .andExpect(jsonPath("$.data[10].id").value("F11"));
     }
 }
+/**
+ *模板                                    案例
+ * @PostMapping("路径")                         @PostMapping("/login")\
+ * Result 方法名 (@RequestBody DTO dto)         Result login(@RequestBody LoginDTO dto)
+ */
+
+/**
+ * 模板                    案例
+ * JWT.create()               JWT.create()
+ * .withClaim("键",值)            .withClaim("UserId",1001L)
+ * .withExpiresAt(时间)           .withExpiresAt(expireTime)
+ * .sign(算法)                    .sign(Algorihm.HMAC256("abc"))
+ */

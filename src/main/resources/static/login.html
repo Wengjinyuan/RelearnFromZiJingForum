@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>紫荆论坛 · 登录</title>
+    <link rel="icon" type="image/x-icon" href="img/zj_icon.ico">
+    <script src="./js/vue.js"></script>
+    <script src="./js/axios-0.18.0.js"></script>
+    <script src="./js/axios-config.js"></script>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --card: rgba(255, 255, 255, 0.96);
+            --muted: #5b5f7a;
+            --purple-50: #f5eefc;
+            --purple-100: #e9dbfb;
+            --purple-200: #d4bbf8;
+            --purple-500: #7b4ef6;
+            --purple-600: #6a3be0;
+            --accent: #ff7ab6;
+            --line: rgba(233, 230, 243, 0.8);
+            --shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(123, 78, 246, 0.08);
+            --radius: 6px;
+            font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #f2f0fc;
+            color: #1e1e2a;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* 优雅背景图 + 深度柔光 */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url(./img/hnbg.jpg);
+            background-size: cover;
+            background-position: center 30%;
+            background-repeat: no-repeat;
+            filter: brightness(0.85) contrast(1.02);
+            z-index: -2;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(123, 78, 246, 0.12), rgba(10, 8, 30, 0.28));
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        a {
+            color: var(--purple-600);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            color: var(--purple-500);
+        }
+
+        /* 顶栏毛玻璃 */
+        .topbar {
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(233, 230, 243, 0.7);
+            position: sticky;
+            top: 0;
+            z-index: 60;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .wrap {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-mini {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius);
+            background: linear-gradient(135deg, var(--purple-600), var(--purple-500));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 800;
+            box-shadow: 0 6px 14px rgba(123, 78, 246, 0.25);
+        }
+
+        .site-title {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--purple-600);
+        }
+
+        .search-placeholder {
+            flex: 1;
+        }
+
+        .user-area-placeholder {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .icon-btn-placeholder {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid var(--line);
+            padding: 7px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        .avatar-placeholder {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px solid var(--purple-200);
+            background: #e2d9fc;
+        }
+
+        /* 登录卡片主区域 */
+        .login-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 16px;
+        }
+
+        .login-card {
+            max-width: 460px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 32px;
+            box-shadow: var(--shadow);
+            padding: 38px 34px;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .login-header .logo-mini {
+            margin: 0 auto 14px;
+            width: 56px;
+            height: 56px;
+            font-size: 22px;
+        }
+
+        .login-header h2 {
+            font-weight: 700;
+            font-size: 28px;
+            color: #1e1e2a;
+            letter-spacing: -0.2px;
+        }
+
+        .login-header p {
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        /* 表单组件 */
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2e2e3a;
+            margin-bottom: 6px;
+            letter-spacing: 0.2px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            border: 1.5px solid var(--line);
+            border-radius: 20px;
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--purple-500);
+            box-shadow: 0 0 0 3px rgba(123, 78, 246, 0.12);
+        }
+
+        .field-error .input-wrapper {
+            border-color: #e5484d;
+            background-color: #fff8f8;
+        }
+
+        .input-icon {
+            padding: 0 14px;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            border: none;
+            padding: 14px 14px 14px 0;
+            font-size: 15px;
+            background: transparent;
+            outline: none;
+            color: #1e1e2a;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #c2c6dc;
+            font-weight: 400;
+        }
+
+        /* 验证码行 */
+        .captcha-row {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .captcha-row .input-wrapper {
+            flex: 1;
+        }
+
+        .captcha-img {
+            width: 118px;
+            height: 52px;
+            background: linear-gradient(125deg, #6a3be0, #9f7ef7);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 24px;
+            letter-spacing: 6px;
+            cursor: pointer;
+            user-select: none;
+            transition: 0.15s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-family: monospace;
+        }
+
+        .captcha-img:hover {
+            transform: scale(0.97);
+            background: linear-gradient(125deg, #5c31cc, #8b63f0);
+        }
+
+        /* 辅助行 */
+        .form-extra {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            margin: 10px 0 26px;
+        }
+
+        .remember {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            cursor: pointer;
+        }
+
+        .remember input {
+            accent-color: var(--purple-600);
+            width: 16px;
+            height: 16px;
+            margin: 0;
+        }
+
+        /* 按钮 */
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            border: none;
+            padding: 14px;
+            border-radius: 44px;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(106, 59, 224, 0.28);
+            transition: transform 0.12s, box-shadow 0.2s;
+        }
+
+        .login-btn:active {
+            transform: scale(0.98);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 第三方区域 */
+        .third-party {
+            margin-top: 32px;
+            text-align: center;
+        }
+
+        .third-party p {
+            color: var(--muted);
+            font-size: 12px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .third-party p::before,
+        .third-party p::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 28%;
+            height: 1px;
+            background: var(--line);
+        }
+
+        .third-party p::before {
+            left: 0;
+        }
+
+        .third-party p::after {
+            right: 0;
+        }
+
+        .third-icons {
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+        }
+
+        .third-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #fff;
+            border: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #5b5f7a;
+        }
+
+        .third-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .third-icon:hover {
+            border-color: var(--purple-500);
+            background: var(--purple-50);
+            color: var(--purple-600);
+            transform: translateY(-3px);
+        }
+
+        .third-icon.wechat:hover {
+            color: #07c160;
+            border-color: #07c160;
+            background: #e3fff1;
+        }
+
+        .third-icon.qq:hover {
+            color: #12b7f5;
+            border-color: #12b7f5;
+            background: #e3f4ff;
+        }
+
+        .third-icon.github:hover {
+            color: #24292e;
+            border-color: #24292e;
+            background: #f0f0f0;
+        }
+
+        .signup-link {
+            margin-top: 26px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .footer {
+            max-width: 1180px;
+            margin: 0 auto 28px;
+            padding: 22px 16px;
+            text-align: center;
+            color: rgba(70, 70, 100, 0.8);
+            font-size: 13px;
+            border-top: 1px solid rgba(233, 230, 243, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        /* 错误动效 */
+        .error-shake {
+            animation: shake 0.32s ease-in-out 0s 2;
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        .error-message {
+            color: #e5484d;
+            font-size: 12px;
+            margin-top: 6px;
+            display: block;
+            font-weight: 500;
+            padding-left: 12px;
+        }
+
+        /* 全局消息提示 */
+        .global-toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(30, 30, 42, 0.92);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 48px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 2000;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transition: opacity 0.2s, transform 0.2s;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+
+        .global-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .global-toast.error {
+            background: #e5484dcc;
+            backdrop-filter: blur(10px);
+        }
+
+        .global-toast.success {
+            background: #2b9e5ecc;
+        }
+
+        @media (max-width: 560px) {
+            .login-card {
+                padding: 28px 20px;
+            }
+
+            .captcha-row {
+                flex-wrap: wrap;
+            }
+
+            .captcha-img {
+                width: 100%;
+                height: 48px;
+                letter-spacing: 4px;
+                font-size: 22px;
+            }
+
+            .third-icons {
+                gap: 18px;
+            }
+
+            .global-toast {
+                white-space: normal;
+                text-align: center;
+                max-width: 85vw;
+                line-height: 1.4;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="logo-mini">
+                        <svg version="1.0" width="800.000000" height="800.000000" viewBox="0 0 800.000000 800.000000"
+                            preserveAspectRatio="xMidYMid meet">
+                            <g transform="translate(143.089938,679.550659) scale(0.066804,-0.066804)" fill="#ffffff"
+                                stroke="none">
+                                <path
+                                    d="M3705 7319 c-81 -12 -246 -64 -320 -101 -109 -56 -199 -121 -291 -212 -207 -205 -319 -456 -331 -742 -14 -328 99 -619 329 -844 375 -367 958 -420 1396 -126 334 224 507 568 489 975 -20 467 -335 872 -786 1011 -141 44 -341 60 -486 39z" />
+                                <path
+                                    d="M2106 4875 c-332 -69 -640 -284 -806 -564 -45 -76 -102 -226 -127 -335 -25 -110 -22 -337 5 -449 51 -205 132 -355 272 -497 74 -76 117 -110 195 -155 454 -264 922 -550 985 -604 160 -136 441 -600 646 -1065 46 -104 76 -138 137 -156 79 -22 156 12 187 83 18 41 18 47 0 227 -11 102 -35 376 -55 610 -30 357 -108 1234 -171 1915 -18 203 -43 286 -122 419 -72 119 -131 193 -234 291 -141 135 -283 215 -475 266 -102 28 -336 35 -437 14z" />
+                                <path
+                                    d="M5191 4875 c-202 -46 -373 -139 -530 -289 -172 -166 -306 -389 -331 -553 -6 -37 -30 -300 -55 -583 -51 -593 -87 -991 -152 -1700 -55 -596 -55 -599 -27 -636 52 -71 130 -92 201 -55 52 26 67 48 137 201 136 298 368 699 509 883 89 115 108 128 692 479 461 276 482 289 557 355 238 205 373 555 338 873 -30 280 -123 481 -310 671 -118 119 -215 189 -364 260 -160 76 -261 100 -446 105 -112 3 -173 0 -219 -11z" />
+                            </g>
+                        </svg>
+                    </div>
+                    <h2>欢迎回到紫荆</h2>
+                    <p>修德 博学 求实 创新</p>
+                </div>
+
+                <!-- 表单提交时调用登录方法 -->
+                <form @submit.prevent="submitLogin">
+                    <div class="form-group" :class="{ 'field-error': errors.account }">
+                        <label>账号 / 邮箱 / 手机号</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">
+                                <svg viewBox="0 0 24 24">
+                                    <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5" fill="none" />
+                                    <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" stroke-width="1.5"
+                                        fill="none" stroke-linecap="round" />
+                                </svg>
+                            </span>
+                            <input type="text" v-model="form.account" placeholder="账号 / 手机号 / 邮箱"
+                                autocomplete="username">
+                        </div>
+                        <span class="error-message" v-if="errors.account">{{ errors.account }}</span>
+                    </div>
+
+                    <!-- 密码 -->
+                    <div class="form-group" :class="{ 'field-error': errors.password }">
+                        <label>密码</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">
+                                <svg viewBox="0 0 24 24">
+                                    <rect x="5" y="11" width="14" height="11" rx="2" ry="2" stroke="currentColor"
+                                        stroke-width="1.5" fill="none" />
+                                    <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.5"
+                                        fill="none" />
+                                </svg>
+                            </span>
+                            <input type="password" v-model="form.password" placeholder="输入密码"
+                                autocomplete="current-password">
+                        </div>
+                        <span class="error-message" v-if="errors.password">{{ errors.password }}</span>
+                    </div>
+
+                    <!-- 验证码区域 (仅前端模拟，实际提交时验证)
+                    <div class="form-group" :class="{ 'field-error': errors.captcha }">
+                        <label>验证码</label>
+                        <div class="captcha-row">
+                            <div class="input-wrapper">
+                                <span class="input-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M4 4l4 4m-4 0l4-4" stroke="currentColor" stroke-width="1.5" />
+                                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"
+                                            fill="none" />
+                                        <path d="M20 20l-4-4m4 0l-4 4" stroke="currentColor" stroke-width="1.5" />
+                                    </svg>
+                                </span>
+                                <input type="text" v-model="form.captchaInput" placeholder="输入右侧验证码" maxlength="4"
+                                    autocomplete="off">
+                            </div>
+                            <div class="captcha-img" @click="refreshCaptcha" title="点击刷新验证码">
+                                {{ dynamicCaptcha }}
+                            </div>
+                        </div>
+                        <span class="error-message" v-if="errors.captcha">{{ errors.captcha }}</span>
+                    </div> -->
+
+                    <!-- 辅助选项 -->
+                    <div class="form-extra">
+                        <label class="remember">
+                            <input type="checkbox" v-model="form.rememberMe"> 记住登录
+                        </label>
+                        <a href="#" @click.prevent="requestPasswordReset">申请重置密码</a>
+                    </div>
+
+                    <button type="submit" class="login-btn" :disabled="loading">
+                        {{ loading ? '验证中...' : '登 录' }}
+                    </button>
+
+                    <div class="signup-link">
+                        还没有账号？<a href="#" @click.prevent="registerAccount">立即注册</a>
+                    </div>
+                </form>
+
+
+            </div>
+        </div>
+        <!-- 全局toast提示 -->
+        <div class="global-toast"
+            :class="{ show: toastVisible, error: toastType === 'error', success: toastType === 'success' }">
+            {{ toastMessage }}
+        </div>
+    </div>
+
+    <script>
+        // 配置 axios 基础地址 (根据实际后端调整，可改为环境变量)
+        const API_BASE_URL = '';  // 如果后端接口同域则留空，例如 '/api'，此处根据文档填写部署地址
+        // 实际请求地址为 /user/login, 完整示例: http://yourdomain.com/user/login
+        // 为了灵活，我们使用相对路径或者完整地址，根据项目自行修改；默认使用相对路径。
+
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    form: {
+                        account: '',      // 对应接口 account 字段
+                        password: '',
+                        captchaInput: '',
+                        rememberMe: true
+                    },
+                    errors: {
+                        account: '',
+                        password: '',
+                        captcha: ''
+                    },
+                    // dynamicCaptcha: '',    // 前端图形验证码(仅模拟)
+                    loading: false,
+                    submitLock: false,
+                    // toast 控制
+                    toastVisible: false,
+                    toastMessage: '',
+                    toastType: 'info',     // 'info', 'error', 'success'
+                    toastTimer: null
+                };
+            },
+            mounted() {
+                this.generateCaptcha();
+                // 从 localStorage 读取记住的账号 (增强用户体验)
+                const savedAccount = localStorage.getItem('bauhinia_account');
+                if (savedAccount && savedAccount.trim() !== '') {
+                    this.form.account = savedAccount;
+                    this.form.rememberMe = true;
+                }
+            },
+            methods: {
+                async requestPasswordReset() {
+                    const account = prompt('请输入账号、邮箱或手机号，管理员批准后密码将重置为 123456');
+                    if (!account || !account.trim()) return;
+                    try {
+                        await axios.post('/api/accounts/password-reset-requests', { account: account.trim() });
+                        this.showToast('申请已提交。如果账号存在，管理员将在后台收到请求。', 'success', 5000);
+                    } catch (error) {
+                        this.showToast(error.response?.data?.message || '提交失败，请稍后再试', 'error');
+                    }
+                },
+                // 显示提示消息
+                showToast(message, type = 'info', duration = 2800) {
+                    if (this.toastTimer) clearTimeout(this.toastTimer);
+                    this.toastMessage = message;
+                    this.toastType = type;
+                    this.toastVisible = true;
+                    this.toastTimer = setTimeout(() => {
+                        this.toastVisible = false;
+                    }, duration);
+                },
+                generateCaptcha() {},
+                refreshCaptcha() {},
+                // // 生成前端验证码 (仅用于展示和前端校验，实际后端应提供独立验证码接口，但本次按照需求做前端模拟)
+                // generateCaptcha() {
+                //     const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+                //     let capt = '';
+                //     for (let i = 0; i < 4; i++) {
+                //         const randomIndex = Math.floor(Math.random() * charset.length);
+                //         capt += charset[randomIndex];
+                //     }
+                //     this.dynamicCaptcha = capt;
+                //     if (this.errors.captcha) this.errors.captcha = '';
+                // },
+                // refreshCaptcha() {
+                //     this.generateCaptcha();
+                //     this.form.captchaInput = '';
+                // },
+                // 表单校验 (包括前端验证码)
+                validate() {
+                    let isValid = true;
+                    this.errors = { account: '', password: '', captcha: '' };
+
+                    const accountVal = this.form.account.trim();
+                    if (!accountVal) {
+                        this.errors.account = '请输入账号/邮箱/手机号';
+                        isValid = false;
+                    }
+
+                    const pwd = this.form.password;
+                    if (!pwd) {
+                        this.errors.password = '密码不能为空';
+                        isValid = false;
+                    }
+                    // // 前端验证码校验 (模拟)
+                    // const inputCaptcha = this.form.captchaInput.trim();
+                    // if (!inputCaptcha) {
+                    //     this.errors.captcha = '请输入验证码';
+                    //     isValid = false;
+                    // } else if (inputCaptcha.toLowerCase() !== this.dynamicCaptcha.toLowerCase()) {
+                    //     this.errors.captcha = '验证码错误，请重新输入';
+                    //     isValid = false;
+                    //     this.refreshCaptcha();  // 错误时自动刷新验证码
+                    // }
+                    return isValid;
+                },
+                // 执行登录 (对接真实接口 /user/login)
+                async submitLogin() {
+                    if (this.loading || this.submitLock) return;
+                    if (!this.validate()) {
+                        // 错误抖动
+                        this.$nextTick(() => {
+                            const errorWrappers = document.querySelectorAll('.field-error');
+                            errorWrappers.forEach(el => {
+                                el.classList.add('error-shake');
+                                setTimeout(() => el.classList.remove('error-shake'), 400);
+                            });
+                        });
+                        return;
+                    }
+
+                    this.loading = true;
+                    this.submitLock = true;
+
+                    const loginPayload = {
+                        account: this.form.account.trim(),
+                        password: this.form.password
+                    };
+
+                    try {
+                        const response = await axios.post('/api/user/login', loginPayload);
+
+                        // 根据后端返回结构处理 
+                        const resData = response.data;
+                        if (resData.code === 1) {
+                            const loginUser = resData.data || {};
+                            const loginUserId = loginUser.id;
+                            // 登录成功: 存储用户信息，记住账号逻辑
+                            if (this.form.rememberMe && this.form.account.trim()) {
+                                localStorage.setItem('bauhinia_account', this.form.account.trim());
+                            } else {
+                                localStorage.removeItem('bauhinia_account');
+                            }
+                            localStorage.removeItem('userInfo');
+                            localStorage.setItem('token', loginUser.token);
+                            const loginUserInfo = {
+                                id: loginUserId,
+                                account: loginUser.account,
+                                username: loginUser.username,
+                                role: loginUser.role,
+                                status: loginUser.status
+                            };
+                            localStorage.setItem('userInfo', JSON.stringify(loginUserInfo));
+                            localStorage.setItem(`userInfo_${loginUserId}`, JSON.stringify(loginUserInfo));
+                            // localStorage.setItem('token', resData.data.token) // 原来的代码，已注释
+                            localStorage.setItem('userId', loginUserId); // 新增：存储用户ID
+                            localStorage.setItem('currentUserId', loginUserId);
+                            localStorage.setItem('role', loginUser.role);
+                            localStorage.setItem('status', loginUser.status);
+
+                            // 调试信息
+                            console.log('登录成功，存储的数据:', {
+                                token: loginUser.token,
+                                userId: loginUserId,
+                                username: loginUser.username,
+                                role: loginUser.role,
+                                status: loginUser.status
+                            });
+                            console.log('localStorage中的userId:', localStorage.getItem('userId'));
+
+                            // 展示欢迎信息，显示用户名或账号
+                            const userName = loginUser?.username || this.form.account.trim();
+                            const targetUrl = Number(loginUser.role) === 2 ? '/admin/admin.html' : '/index.html';
+                            const targetName = Number(loginUser.role) === 2 ? '管理后台' : '论坛首页';
+                            this.showToast(`登录成功，欢迎 ${userName}！即将跳转至${targetName}。`, 'success', 2000);
+                            // 2秒后跳转至目标页面
+                            setTimeout(() => {
+                                window.location.href = targetUrl;
+                            }, 1800);
+                        } else {
+                            // 后端返回业务错误码
+                            const errMsg = resData.msg || '登录失败，请检查账号或密码';
+                            this.showToast(errMsg, 'error');
+                            // 如果密码错误，刷新验证码提升安全性
+                            this.refreshCaptcha();
+                        }
+                    } catch (error) {
+                        console.error('登录请求异常:', error);
+                        let errorText = '网络异常，请检查后端服务是否可用';
+                        if (error.response && error.response.data && error.response.data.msg) {
+                            errorText = error.response.data.msg;
+                        } else if (error.message) {
+                            errorText = error.message;
+                        }
+                        this.showToast(errorText, 'error');
+                        this.refreshCaptcha();
+                    } finally {
+                        this.loading = false;
+                        this.submitLock = false;
+                    }
+                },
+                forgotPassword() {
+                    this.showToast('找回密码指引：请通过注册邮箱或绑定的手机号重置密码。', 'info');
+                },
+                registerAccount() {
+                    window.location.href = 'register.html';
+                },
+            },
+            watch: {
+                'form.captchaInput'(newVal) {
+                    if (this.errors.captcha && newVal) this.errors.captcha = '';
+                },
+                'form.account'(newVal) {
+                    if (this.errors.account && newVal && newVal.trim().length >= 2) this.errors.account = '';
+                },
+                'form.password'(newVal) {
+                    if (this.errors.password && newVal && newVal.length >= 4) this.errors.password = '';
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

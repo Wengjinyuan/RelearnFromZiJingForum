@@ -6,3 +6,4 @@ out/
 logs/
 uploads/
 data/
+.playwright-cli/

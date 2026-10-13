@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>紫荆论坛 · 发布新帖</title>
+    <link rel="icon" type="image/x-icon" href="../img/zj_icon.ico">
+    <link rel="stylesheet" href="../css/common.css">
+    <style>
+        /* ===== 发布页样式 ===== */
+        .breadcrumb-wrapper {
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--purple-600);
+            text-decoration: underline;
+        }
+
+        .page-container {
+            max-width: 1180px;
+            margin: 24px auto;
+            padding: 0 16px;
+            gap: 24px;
+        }
+
+        .publish-card {
+            flex: 1;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            box-shadow: 0 6px 18px rgba(99, 70, 190, 0.03);
+        }
+
+        .publish-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .publish-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--purple-600);
+            margin: 0;
+        }
+
+        /* 表单行 */
+        .form-row {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1e1e2a;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-label svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--purple-500);
+            fill: none;
+        }
+
+        /* 板块选择 — 可取消 (允许无选中状态) */
+        .board-selector {
+            background: var(--card);
+            padding: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .board-option {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #fff;
+            border: 1px solid var(--line);
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.1s;
+            user-select: none;
+        }
+
+        .board-option:hover {
+            background: var(--purple-50);
+            border-color: var(--purple-200);
+            color: var(--purple-600);
+        }
+
+        .board-option.active {
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            border-color: transparent;
+            color: #fff;
+            box-shadow: 0 6px 14px rgba(106, 59, 224, 0.2);
+        }
+
+        /* 标题输入框 */
+        .title-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.1s;
+        }
+
+        .title-input:focus {
+            border-color: var(--purple-300);
+            box-shadow: 0 0 0 3px var(--purple-50);
+        }
+
+        /* 富文本编辑器 — 增强版 */
+        .rich-editor {
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .editor-toolbar {
+            background: linear-gradient(180deg, #faf8ff, #fff);
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+            align-items: center;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+            padding-right: 8px;
+            border-right: 1px solid var(--line);
+            margin-right: 4px;
+        }
+
+        .tool-group:last-child {
+            border-right: none;
+        }
+
+        .tool-btn {
+            background: transparent;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            color: var(--muted);
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            transition: 0.1s;
+        }
+
+        .tool-btn:hover {
+            background: var(--purple-50);
+            color: var(--purple-600);
+        }
+
+        .tool-btn.active {
+            background: var(--purple-100);
+            color: var(--purple-700);
+        }
+
+        /* 颜色选择器 */
+        .color-picker-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .color-picker-input {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 2px;
+            background: white;
+        }
+
+        .editor-content {
+            min-height: 260px;
+            padding: 18px 20px;
+            outline: none;
+            font-size: 15px;
+            line-height: 1.65;
+            color: #222;
+        }
+
+        .editor-content[contenteditable="true"]:empty:before {
+            content: "写正文... 支持富文本格式";
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .image-hint {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        /* 标签输入 */
+        .tags-input-wrapper {
+            border: 1px solid var(--line);
+            border-radius: 30px;
+            padding: 8px 16px;
+            background: #fff;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tag-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: linear-gradient(90deg, var(--purple-50), #fff);
+            color: var(--purple-600);
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid var(--purple-200);
+        }
+
+        .tag-item::before {
+            content: '#';
+            font-weight: 800;
+            margin-right: 2px;
+            color: var(--purple-600);
+        }
+
+        .tag-item .remove-tag {
+            margin-left: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--purple-500);
+            background: none;
+            border: none;
+            font-size: 16px;
+        }
+
+        .tag-item .remove-tag:hover {
+            color: #d00;
+        }
+
+        .tags-input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 140px;
+            padding: 6px 0;
+            font-size: 14px;
+            background: transparent;
+        }
+
+        .tags-hint {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 6px;
+            margin-left: 16px;
+        }
+
+        /* 操作按钮组 */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            margin-top: 32px;
+            padding-top: 24px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--line);
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .btn-outline:hover {
+            background: var(--purple-50);
+            border-color: var(--purple-200);
+            color: var(--purple-600);
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            border: none;
+            padding: 10px 32px;
+            border-radius: 30px;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: 0.1s;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        .right-col {
+            flex: 0 0 320px;
+        }
+
+        .footer {
+            max-width: 1180px;
+            margin: 28px auto;
+            padding: 22px 16px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+            border-top: 1px solid var(--line);
+        }
+
+
+        @media (max-width: 980px) {
+            .page-container {
+                flex-direction: column;
+            }
+
+            .right-col {
+                flex: 1;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .search {
+                display: none;
+            }
+
+            .site-title {
+                display: none;
+            }
+
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="../css/wangeditor.css" rel="stylesheet">
+    <script src="../js/vue.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script src="../js/axios-config.js"></script>
+
+</head>
+
+<body>
+
+    <div id="topbar-container"></div>
+    <div id="app">
+
+        <div class="page-container">
+            <div class="breadcrumb-wrapper">
+                <div class="breadcrumb">
+                    <a href="../index.html">紫荆论坛</a>
+                    <span>></span> <span>发布新帖</span>
+                </div>
+            </div>
+            <div class="publish-card">
+                <div class="publish-header">
+                    <h2>发布新帖</h2>
+                </div>
+
+                <!-- 板块选择 (可无选中) -->
+                <div class="form-row">
+                    <div class="form-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <line x1="9" y1="9" x2="15" y2="15" />
+                            <line x1="15" y1="9" x2="9" y2="15" />
+                        </svg>
+                        选择板块 <span style="font-weight:400; color:var(--muted); margin-left:6px;"></span>
+                    </div>
+                    <div class="board-selector">
+                        <span v-for="board in filteredBoardList" :key="board" class="board-option"
+                            :class="{ active: selectedBoard === board }" @click="toggleBoard(board)">
+                            {{ board }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 标题输入 -->
+                <div class="form-row">
+                    <div class="form-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 7h16M4 12h16M4 17h10" />
+                        </svg>
+                        标题
+                    </div>
+                    <input class="title-input" type="text" placeholder="一句话概括你的内容..." v-model="postTitle">
+                </div>
+                <!-- 富文本编辑器 -->
+                <div class="form-row">
+                    <div class="form-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                            <polyline points="10 9 9 9 8 9" />
+                        </svg>
+                        正文
+                    </div>
+                    <!-- <demo-nav title="wangEditor get HTML"></demo-nav> -->
+                    <div class="page-container-wangEditor">
+                        <div class="page-right" style="border: 1px solid #ccc;border-radius: 8px; padding: 2px;">
+                            <!-- 编辑器 DOM -->
+                            <div>
+                                <div id="editor-toolbar" style="border-bottom: 1px solid #ccc;"></div>
+                                <div id="editor-text-area" style="height: 350px;"></div>
+                            </div>
+
+                            <!-- 显示内容 -->
+                            <!-- <div style="margin-top: 20px;">
+                                <textarea id="editor-content-textarea"
+                                    style="width: 100%; height: 100px; outline: none;" readonly></textarea>
+                            </div>
+                            <div id="editor-content-view" class="editor-content-view"></div> -->
+                        </div>
+                        <div class="image-hint">{{ contentLength }}字 </div>
+                    </div>
+                </div>
+
+                <!-- 标签输入 -->
+                <div class="form-row">
+                    <div class="form-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                            <line x1="7" y1="7" x2="7.01" y2="7" />
+                        </svg>
+                        标签
+                    </div>
+                    <div class="tags-input-wrapper">
+                        <span v-for="(tag, idx) in tagList" :key="idx" class="tag-item">
+                            {{ tag }}<span class="remove-tag" @click="removeTag(idx)">×</span>
+                        </span>
+                        <input class="tags-input" type="text" v-model="tagInputValue" @keydown.space.prevent="addTag"
+                            @keydown.enter.prevent="addTag" placeholder="输入文字后按空格或回车添加标签">
+                    </div>
+                </div>
+
+                <!-- 发布/保存按钮组 -->
+                <div class="form-actions">
+                    <button class="btn-outline" @click="saveDraft">保存草稿</button>
+                    <button class="btn-primary" @click="publishPost">发布帖子</button>
+                </div>
+            </div>
+        </div>
+        <!-- 全局toast提示 -->
+        <div class="global-toast"
+            :class="{ show: toastVisible, error: toastType === 'error', success: toastType === 'success' }">
+            {{ toastMessage }}
+        </div>
+    </div>
+
+    <script src="../components/TopBar.js"></script>
+    <script>
+        new Vue({ el: '#topbar-container', template: '<top-bar></top-bar>' });
+    </script>
+    <script src="../js/wangeditor.js"></script>
+    <script>
+
+        new Vue({
+            el: '#app',
+            data: {
+                currentUser: {},
+                defaultAvatar: '../img/头像示例.jpg',
+
+
+                // 板块列表及选中项
+                boardList: ['校园资讯', '学习交流', '社团活动', '二手交易', '生活服务', '校园树洞', '公告'],
+                selectedBoard: '',
+                // 表单数据
+                postTitle: '',
+                postContent: '',
+                // 标签相关
+                tagList: [],
+                tagInputValue: '',
+
+                // toast 控制
+                toastVisible: false,
+                toastMessage: '',
+                toastType: 'info',
+                toastTimer: null,
+
+            },
+            computed: {
+                filteredBoardList: function () {
+                    const isAdmin = this.currentUser?.role > 0;
+                    return this.boardList.filter(b => isAdmin || b !== '公告');
+                },
+                contentLength: function () {
+                    var temp = this.postContent.replace(/<[^>]*>/g, '');
+                    return temp.length;
+                }
+            },
+            mounted: function () {
+                this.loadCurrentUser();
+                const E = window.wangEditor
+                // 1. 创建编辑器（挂载到 this，方便 Vue 使用）
+                this.editor = E.createEditor({
+                    selector: '#editor-text-area',
+                    html: '',
+                    config: {
+                        placeholder: '点击此处输入文本观点...',
+                        MENU_CONF: {
+                            uploadImage: {
+                                server: '/api/posts/images',
+                                fieldName: 'file',
+                                base64LimitSize: 0,
+                                maxFileSize: 20 * 1024 * 1024,
+                                headers: {
+                                    Authorization: `Bearer ${localStorage.getItem('token') || ''}`
+                                }
+                            }
+                        },
+                        // 内容变化时
+                        onChange: (editor) => {
+                            const html = editor.getHtml()
+                            this.postContent = html
+                            this.hasUnsavedContent = true
+                        },
+
+                    }
+                })
+                // 2. 创建工具栏
+                this.toolbar = E.createToolbar({
+                    editor: this.editor,
+                    selector: '#editor-toolbar',
+                    config: {}
+                })
+                //3.加载草稿
+                const data = localStorage.getItem('draft_post')
+                if (!data) return
+                const postData = JSON.parse(data)
+                this.selectedBoard = postData.category || ''
+                this.postTitle = postData.title || ''
+                this.postContent = postData.content || ''
+                this.editor.setHtml(this.postContent)
+                this.tagList = postData.tags || []
+                localStorage.removeItem('draft_post')
+                this.showToast('已加载上次草稿', 'success', 2000);
+                // 4. 添加页面关闭前的提示
+                window.addEventListener('beforeunload', this.beforeUnloadHandler)
+            },
+            // 组件销毁前移除事件监听
+            beforeDestroy: function () {
+                window.removeEventListener('beforeunload', this.beforeUnloadHandler)
+            },
+            methods: {
+                loadCurrentUser: function () {
+                    const userId = localStorage.getItem('userId') || localStorage.getItem('currentUserId');
+                    const token = localStorage.getItem('token');
+                    if (!userId || userId === 'null' || !token) {
+                        this.showToast('请先登录后再发布帖子', 'error');
+                        setTimeout(() => { window.location.href = '../login.html'; }, 900);
+                        return;
+                    }
+
+                    const cachedUser = this.readStoredJson(`userInfo_${userId}`) || this.readStoredJson('userInfo');
+                    if (cachedUser && String(cachedUser.id || cachedUser.userId || '') === String(userId)) {
+                        this.applyCurrentUser(cachedUser);
+                    }
+
+                    axios.get(`/api/user/info/${userId}`)
+                        .then(response => {
+                            if (response.data.code !== 1) {
+                                this.showToast(response.data.msg || '获取当前用户信息失败', 'error');
+                                return;
+                            }
+                            this.applyCurrentUser(response.data.data);
+                        })
+                        .catch(error => {
+                            console.error('获取当前用户信息失败:', error);
+                            this.showToast('获取当前用户信息失败，请重新登录', 'error');
+                        });
+                },
+                applyCurrentUser: function (user) {
+                    this.currentUser = user || {};
+                    if (user?.id) {
+                        localStorage.setItem('userId', user.id);
+                        localStorage.setItem('currentUserId', user.id);
+                        localStorage.setItem('userInfo', JSON.stringify(user));
+                        localStorage.setItem(`userInfo_${user.id}`, JSON.stringify(user));
+                    }
+                },
+                readStoredJson: function (key) {
+                    try {
+                        return JSON.parse(localStorage.getItem(key) || 'null');
+                    } catch (error) {
+                        localStorage.removeItem(key);
+                        return null;
+                    }
+                },
+                resolveAvatarUrl: function (avatar) {
+                    if (!avatar) return this.defaultAvatar;
+                    if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:') || avatar.startsWith('blob:')) {
+                        return avatar;
+                    }
+                    if (avatar.startsWith('/')) return avatar;
+                    return avatar;
+                },
+                handleAvatarError: function (event) {
+                    if (event.target.src.includes('/img/头像示例.jpg')) return;
+                    event.target.src = this.defaultAvatar;
+                },
+                formatNumber: function (num) {
+                    const value = Number(num) || 0;
+                    if (value >= 10000) return (value / 10000).toFixed(value >= 100000 ? 0 : 1) + 'w';
+                    if (value >= 1000) return (value / 1000).toFixed(value >= 10000 ? 0 : 1) + 'k';
+                    return String(value);
+                },
+                // 显示提示消息
+                showToast(message, type = 'info', duration = 2800) {
+                    if (this.toastTimer) clearTimeout(this.toastTimer);
+                    this.toastMessage = message;
+                    this.toastType = type;
+                    this.toastVisible = true;
+                    this.toastTimer = setTimeout(() => {
+                        this.toastVisible = false;
+                    }, duration);
+                },
+                // 板块切换（允许取消选中）
+                toggleBoard: function (board) {
+                    if (this.selectedBoard === board) {
+                        this.selectedBoard = '';
+                    } else {
+                        this.selectedBoard = board;
+                    }
+                    this.hasUnsavedContent = true
+                },
+                // 添加标签
+                addTag: function () {
+                    var val = this.tagInputValue.trim();
+                    if (val && this.tagList.indexOf(val) === -1) {
+                        var clean = val.replace(/^#+/, '');
+                        if (clean && this.tagList.indexOf(clean) === -1) {
+                            this.tagList.push(clean);
+                        }
+                    }
+                    this.tagInputValue = '';
+                    this.hasUnsavedContent = true
+                },
+                // 删除标签
+                removeTag: function (index) {
+                    this.tagList.splice(index, 1);
+                    this.hasUnsavedContent = true
+                },
+                // 重置表单（清空所有内容）
+                resetForm: function () {
+                    this.postTitle = ''
+                    this.postContent = ''
+                    this.selectedBoard = ''
+                    this.tagList = []
+                    this.hasUnsavedContent = false
+
+                    // 同步清空编辑器内容
+                    if (this.editor && this.editor.setHtml) {
+                        this.editor.setHtml('')
+                    }
+                },
+                // 页面关闭前的提示
+                beforeUnloadHandler: function (event) {
+                    if (this.hasUnsavedContent) {
+                        event.preventDefault()
+                        event.returnValue = '您有未保存的内容，确定要离开吗？'
+                        return event.returnValue
+                    }
+                },
+                // 发布帖子
+                publishPost: function () {
+                    const currentUserId = this.currentUser.id || localStorage.getItem('userId') || localStorage.getItem('currentUserId');
+                    if (!currentUserId || currentUserId === 'null') {
+                        this.showToast('请先登录后再发布帖子', 'error');
+                        setTimeout(() => { window.location.href = '../login.html'; }, 900);
+                        return;
+                    }
+                    // 表单验证
+                    if (!this.postTitle.trim()) {
+                        this.showToast('请填写标题', 'error');
+                        return;
+                    }
+                    var contentPlain = this.postContent.replace(/<[^>]*>/g, '').trim();
+                    if (!contentPlain) {
+                        this.showToast('请填写正文内容', 'error');
+                        return;
+                    }
+                    if (contentPlain.length < 5) {
+                        this.showToast('正文内容过短', 'error');
+                        return;
+                    }
+                    const div = document.createElement('div');
+                    div.innerHTML = this.postContent;
+                    const img = div.querySelector('img');
+                    let firstImage = null;
+                    if (img) {
+                        const src = img.src;
+                        if (src && (src.startsWith('http') || src.startsWith('/uploads/'))) {
+                            firstImage = src;
+                        }
+                    }
+                    // 请求数据
+                    const postCreateDTO = {
+                        userId: Number(currentUserId),
+                        category: this.selectedBoard,
+                        title: this.postTitle,
+                        content: this.postContent,
+                        image: firstImage,
+                        tags: this.tagList
+                    };
+                    // 发送请求
+                    axios.post('/api/post', postCreateDTO)
+                        .then((response) => {
+                            console.log('响应数据:', response.data);
+                            const result = response.data;
+                            if (result.code === 1) {
+                                this.showToast('发布成功！', 'success', 2000);
+                                // 发布成功后清空表单
+                                this.resetForm();
+                                setTimeout(() => {
+                                    window.location.href = '../index.html';
+                                }, 3000);
+                            } else {
+                                this.showToast(`发布失败：${result.msg || '未知错误'}`, 'error');
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('发布请求失败:', error);
+                            if (error.response) {
+                                this.showToast(`服务器错误：${error.response.status}`, 'error');
+                            } else if (error.request) {
+                                this.showToast('网络错误：服务器无响应', 'error');
+                            } else {
+                                this.showToast(`请求错误：${error.message}`, 'error');
+                            }
+                        });
+                },
+                //保存草稿
+                saveDraft: function () {
+                    const postData = {
+                        category: this.selectedBoard,
+                        title: this.postTitle,
+                        content: this.postContent,
+                        tags: this.tagList
+                    }
+                    // 转成字符串存入本地
+                    localStorage.setItem('draft_post', JSON.stringify(postData))
+                    // 提示
+                    this.showToast('已保存草稿，下次打开自动加载草稿内容', 'success', 2000);
+                },
+
+
+
+            },
+            watch: {
+                // 监听表单变化，标记未保存状态
+                postTitle: function () {
+                    this.hasUnsavedContent = true
+                },
+                postContent: function () {
+                    this.hasUnsavedContent = true
+                },
+                tagList: {
+                    handler: function () {
+                        this.hasUnsavedContent = true
+                    },
+                    deep: true
+                },
+                selectedBoard: function () {
+                    this.hasUnsavedContent = true
+                }
+            }
+        });
+
+    </script>
+</body>
+
+</html>

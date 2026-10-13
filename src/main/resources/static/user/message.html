@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>紫荆论坛 · 消息中心</title>
+    <link rel="icon" type="image/x-icon" href="../img/zj_icon.ico">
+    <link rel="stylesheet" href="../css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #ffffff;
+            --card: #ffffff;
+            --muted: #8b8fa3;
+            --purple-50: #f5eefc;
+            --purple-100: #e9dbfb;
+            --purple-200: #d4bbf8;
+            --purple-500: #7b4ef6;
+            --purple-600: #6a3be0;
+            --accent: #ff7ab6;
+            --line: #e9e6f3;
+            --shadow: 0 8px 24px rgba(103, 72, 193, 0.12);
+            --radius: 6px;
+            font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+            color-scheme: light;
+        }
+
+        body {
+            background: var(--bg);
+            color: #1e1e2a;
+            -webkit-font-smoothing: antialiased;
+        }
+
+
+
+        /* 横幅区域 消息头 */
+        .msg-header {
+            max-width: 1180px;
+            margin: 24px auto 0;
+            padding: 0 16px;
+        }
+
+        .msg-banner {
+            background: linear-gradient(135deg, #f9f6ff, #ffffff);
+            border-radius: var(--radius);
+            border: 1px solid var(--line);
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .msg-title h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e1e2a;
+        }
+
+        .msg-title p {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .mark-all-btn {
+            background: var(--purple-50);
+            border: 1px solid var(--purple-200);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--purple-600);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mark-all-btn:hover {
+            background: var(--purple-100);
+        }
+
+        /* 主体容器 */
+        .msg-container {
+            max-width: 1148px;
+            margin: 12px auto 40px;
+            padding: 0 16px;
+        }
+
+        /* tabs 分类 */
+        .tabs-wrapper {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 6px;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .msg-tab {
+            background: transparent;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .msg-tab.active {
+            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .msg-tab .badge-count {
+            display: inline-block;
+            margin-left: 6px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 30px;
+            padding: 0 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .msg-tab.active .badge-count {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* 消息卡片通用样式 */
+        .msg-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .msg-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .msg-card.unread {
+            background: #fefbff;
+            border-left: 3px solid var(--purple-500);
+            box-shadow: 0 2px 8px rgba(123, 78, 246, 0.06);
+        }
+
+        .msg-card.read {
+            opacity: 0.7;
+            border-left: 3px solid transparent;
+        }
+
+        .msg-card.read .msg-user {
+            color: var(--muted);
+        }
+
+        .msg-card.read .msg-text {
+            color: #a0a4b8;
+        }
+
+        .msg-card:hover {
+            background: var(--purple-50);
+            transform: translateY(-1px);
+        }
+
+        .msg-card.read:hover {
+            opacity: 0.85;
+        }
+
+        /* 头像区域 */
+        .msg-avatar {
+            flex-shrink: 0;
+        }
+
+        .msg-avatar img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--purple-200);
+        }
+
+        .msg-content {
+            flex: 1;
+        }
+
+        .msg-header-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .msg-user {
+            font-weight: 700;
+            font-size: 15px;
+            color: #1e1e2a;
+        }
+
+        .msg-badge {
+            background: var(--purple-100);
+            color: var(--purple-600);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 14px;
+            margin-left: 8px;
+        }
+
+        .msg-time {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .msg-text {
+            font-size: 14px;
+            color: #3a3c4a;
+            margin: 6px 0 6px;
+            line-height: 1.45;
+        }
+
+        .dot-unread {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            position: absolute;
+            left: 10px;
+            top: 22px;
+        }
+
+        .empty-state {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 56px 20px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .load-more {
+            text-align: center;
+            padding: 16px 0;
+            color: var(--purple-600);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .load-more:hover {
+            color: var(--purple-500);
+        }
+
+        .footer {
+            max-width: 1180px;
+            margin: 28px auto;
+            padding: 22px 16px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+            border-top: 1px solid var(--line);
+        }
+
+
+
+        @media (max-width: 860px) {
+            .msg-header-line {
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .msg-card {
+                flex-direction: column;
+            }
+
+            .msg-avatar img {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+    <script src="../js/vue.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script src="../js/axios-config.js"></script>
+</head>
+
+<body>
+    <div id="topbar-container"></div>
+    <div id="app">
+
+        <!-- 消息横幅 -->
+        <div class="msg-header">
+            <div class="msg-banner">
+                <div class="msg-title">
+                    <h2>消息中心</h2>
+                    <p>评论 · 点赞 · 收藏 · 系统通知 — 与你相关的所有互动</p>
+                </div>
+                <button class="mark-all-btn" @click="markAllAsRead">全部标为已读</button>
+            </div>
+        </div>
+
+        <div class="msg-container">
+            <!-- 分类 Tabs -->
+            <div class="tabs-wrapper">
+                <button v-for="tab in tabList" :key="tab.key" class="msg-tab" :class="{ active: activeTab === tab.key }"
+                    @click="switchTab(tab.key)">
+                    {{ tab.label }}
+                </button>
+            </div>
+
+            <!-- 消息列表 -->
+            <div class="msg-list" v-if="notifications.length">
+                <div v-for="msg in notifications" :key="msg.id" class="msg-card" :class="{ unread: !msg.isRead }"
+                    @click="handleMsgClick(msg)">
+                    <div class="msg-avatar">
+                        <img :src="resolveAvatar(msg.avatar)" alt="avatar" loading="lazy"
+                            @error="onAvatarError($event)">
+                    </div>
+                    <div class="msg-content">
+                        <div class="msg-header-line">
+                            <div>
+                                <span class="msg-user">{{ msg.username || '未知用户' }}</span>
+                                <span class="msg-badge">{{ getTypeLabel(msg.type) }}</span>
+                            </div>
+                            <span class="msg-time">{{ formatTimeAgo(msg.createdTime) }}</span>
+                        </div>
+                        <div class="msg-text">{{ msg.content }}</div>
+                    </div>
+                    <div class="dot-unread" v-if="!msg.isRead"></div>
+                </div>
+                <div class="load-more" v-if="pageResult.hasNext" @click="loadMore">
+                    <span v-if="!loading">加载更多</span>
+                    <span v-else>加载中...</span>
+                </div>
+            </div>
+            <div v-else-if="!loading" class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <p>暂无{{ currentTabLabel }}消息</p>
+            </div>
+            <div v-else class="empty-state">
+                <p>加载中...</p>
+            </div>
+        </div>
+        <div class="global-toast"
+            :class="{ show: toastVisible, success: toastType === 'success', error: toastType === 'error' }">{{
+            toastMessage }}</div>
+    </div>
+
+    <script src="../components/TopBar.js"></script>
+    <script>
+        new Vue({ el: '#topbar-container', template: '<top-bar></top-bar>' });
+    </script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                activeTab: 'all',
+                loading: false,
+                notifications: [],
+                pageResult: { current: 1, size: 15, total: 0, pages: 0, hasNext: false },
+                tabList: [
+                    { key: 'all', label: '全部' },
+                    { key: 'reply', label: '评论' },
+                    { key: 'like', label: '点赞' },
+                    { key: 'favor', label: '收藏' },
+                    { key: 'system', label: '系统' }
+                ],
+                defaultAvatar: '../img/头像示例.jpg',
+                toastVisible: false,
+                toastMessage: '',
+                toastType: 'info',
+                toastTimer: null
+            },
+            computed: {
+                currentTabLabel() {
+                    const found = this.tabList.find(t => t.key === this.activeTab);
+                    return found ? found.label : '全部';
+                }
+            },
+            mounted() {
+                this.loadNotifications();
+                window.addEventListener('scroll', this.handleScroll);
+            },
+            beforeDestroy() {
+                window.removeEventListener('scroll', this.handleScroll);
+                if (this.toastTimer) clearTimeout(this.toastTimer);
+            },
+            methods: {
+                loadNotifications() {
+                    if (this.loading) return;
+                    this.loading = true;
+                    axios.get('/api/notification/list', {
+                        params: {
+                            current: this.pageResult.current,
+                            size: this.pageResult.size,
+                            sort: this.activeTab
+                        }
+                    }).then(response => {
+                        const data = response.data;
+                        const records = data.records || [];
+                        if (this.pageResult.current === 1) {
+                            this.notifications = records;
+                        } else {
+                            this.notifications = this.notifications.concat(records);
+                        }
+                        this.pageResult = {
+                            current: data.current,
+                            size: data.size,
+                            total: data.total,
+                            pages: data.pages,
+                            hasNext: data.hasNext
+                        };
+                    }).catch(error => {
+                        console.error('加载消息失败:', error);
+                    }).finally(() => {
+                        this.loading = false;
+                    });
+                },
+                loadMore() {
+                    if (this.pageResult.hasNext && !this.loading) {
+                        this.pageResult.current++;
+                        this.loadNotifications();
+                    }
+                },
+                switchTab(tab) {
+                    if (this.activeTab === tab) return;
+                    this.activeTab = tab;
+                    this.pageResult.current = 1;
+                    this.notifications = [];
+                    this.loadNotifications();
+                },
+                markAllAsRead() {
+                    const unreadIds = this.notifications
+                        .filter(n => !n.isRead)
+                        .map(n => ({ id: n.id }));
+                    if (unreadIds.length === 0) {
+                        this.showToast('没有未读消息', 'info');
+                        return;
+                    }
+                    axios.put('/api/notification/readAll', unreadIds)
+                        .then(response => {
+                            if (response.data.code === 1) {
+                                this.notifications.forEach(n => { n.isRead = true; });
+                                this.showToast('已全部标为已读', 'success');
+                            } else {
+                                this.showToast('操作失败', 'error');
+                            }
+                        })
+                        .catch(() => {
+                            this.showToast('操作失败', 'error');
+                        });
+                },
+                handleMsgClick(msg) {
+                    if (msg.targetId) {
+                        if (!msg.isRead) {
+                            msg.isRead = true;
+                            axios.put(`/api/notification/read/${msg.id}`).finally(() => {
+                                window.location.href = `../post/detail.html?postId=${msg.targetId}`;
+                            });
+                        } else {
+                            window.location.href = `../post/detail.html?postId=${msg.targetId}`;
+                        }
+                    }
+                },
+                getTypeLabel(type) {
+                    const map = {
+                        'like': '点赞',
+                        'like_comment': '点赞',
+                        'comment': '评论',
+                        'reply_comment': '回复',
+                        'favorite': '收藏',
+                        'follow': '关注',
+                        'system': '系统',
+                        'top': '置顶',
+                        'essence': '精华',
+                        'delete': '删除'
+                    };
+                    return map[type] || '通知';
+                },
+                formatTimeAgo(dateTime) {
+                    if (!dateTime) return '';
+                    const targetTime = new Date(dateTime);
+                    const now = new Date();
+                    const diffMs = now - targetTime;
+                    const diffSeconds = Math.floor(diffMs / 1000);
+                    if (diffSeconds < 60) return '刚刚';
+                    const diffMinutes = Math.floor(diffSeconds / 60);
+                    if (diffMinutes < 60) return `${diffMinutes}分钟前`;
+                    const diffHours = Math.floor(diffMinutes / 60);
+                    if (diffHours < 24) return `${diffHours}小时前`;
+                    const diffDays = Math.floor(diffHours / 24);
+                    if (diffDays === 1) return '昨天';
+                    if (diffDays === 2) return '前天';
+                    const year = targetTime.getFullYear();
+                    const month = String(targetTime.getMonth() + 1).padStart(2, '0');
+                    const day = String(targetTime.getDate()).padStart(2, '0');
+                    if (year === now.getFullYear()) return `${month}-${day}`;
+                    return `${year}-${month}-${day}`;
+                },
+                resolveAvatar(avatar) {
+                    if (!avatar) return this.defaultAvatar;
+                    if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:') || avatar.startsWith('blob:')) return avatar;
+                    if (avatar.startsWith('/')) return avatar;
+                    return avatar;
+                },
+                onAvatarError(event) {
+                    event.target.src = this.defaultAvatar;
+                },
+                handleScroll() {
+                    const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 400;
+                    if (nearBottom && this.pageResult.hasNext && !this.loading) {
+                        this.loadMore();
+                    }
+                },
+                showToast(message, type) {
+                    if (this.toastTimer) clearTimeout(this.toastTimer);
+                    this.toastMessage = message;
+                    this.toastType = type || 'info';
+                    this.toastVisible = true;
+                    this.toastTimer = setTimeout(() => {
+                        this.toastVisible = false;
+                        this.toastMessage = '';
+                    }, 2500);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
