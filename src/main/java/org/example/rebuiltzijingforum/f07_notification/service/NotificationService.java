@@ -19,4 +19,6 @@ public interface NotificationService {
     void read(long userId, long id);
     /** 当前用户全部标已读，返回更新行数。 */
     int readAll(long userId);
+    /** 打开私信会话时，只标记该会话产生的 MESSAGE 通知，不误清其他通知。 */
+    int readMessagesForConversation(long userId, long conversationId);
 }

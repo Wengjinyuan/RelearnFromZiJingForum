@@ -45,13 +45,19 @@ public class CommentMapper {
     }
 
     /** 原子加一：数据库用当前 comment_count+1，避免两人同时评论时相互覆盖。 */
-    public int incrementPostCount(long postId) {
-        return jdbc.update("UPDATE post SET comment_count=comment_count+1 WHERE id=? AND status='PUBLISHED' AND deleted_at IS NULL", postId);
+    public int incrementPostCount(long postId, LocalDateTime repliedAt) {
+        return jdbc.update("UPDATE post SET comment_count=comment_count+1,last_reply_at=? WHERE id=? AND status='PUBLISHED' AND deleted_at IS NULL",
+                repliedAt, postId);
     }
 
     /** 原子减一且不小于零；删除评论的事务会同时修改 comment 和 post。 */
-    public void decrementPostCount(long postId) {
-        jdbc.update("UPDATE post SET comment_count=comment_count-1 WHERE id=? AND comment_count>0", postId);
+    public void decrementPostCount(long postId, int removed) {
+        jdbc.update("""
+                UPDATE post SET
+                  comment_count=CASE WHEN comment_count>? THEN comment_count-? ELSE 0 END,
+                  last_reply_at=(SELECT MAX(created_at) FROM comment WHERE post_id=? AND deleted=FALSE)
+                WHERE id=?
+                """, removed, removed, postId, postId);
     }
 
     /** 逻辑删除保留父评论占位，让子回复的上下文仍可读。 */
@@ -59,9 +65,15 @@ public class CommentMapper {
         return jdbc.update("UPDATE comment SET deleted=TRUE, deleted_at=? WHERE id=? AND deleted=FALSE", now, id);
     }
 
+    /** 根评论隐藏后其回复已经失去展示入口，因此删除根节点时一起软删除整棵回复树。 */
+    public int markDeletedTree(long rootId, LocalDateTime now) {
+        return jdbc.update("UPDATE comment SET deleted=TRUE, deleted_at=? WHERE (id=? OR root_id=?) AND deleted=FALSE",
+                now, rootId, rootId);
+    }
+
     /** 只计算一级评论：parent_id IS NULL 是“没有直接父评论”的条件。 */
     public long countRoots(long postId) {
-        return jdbc.queryForObject("SELECT COUNT(*) FROM comment WHERE post_id=? AND parent_id IS NULL", Long.class, postId);
+        return jdbc.queryForObject("SELECT COUNT(*) FROM comment WHERE post_id=? AND parent_id IS NULL AND deleted=FALSE", Long.class, postId);
     }
 
     /** 按稳定顺序取一页一级评论；LIMIT 控制页大小，OFFSET 跳过之前的页。 */
@@ -71,13 +83,13 @@ public class CommentMapper {
             case "desc" -> "created_at DESC, id DESC";
             default -> "like_count DESC, id DESC";
         };
-        return jdbc.query("SELECT * FROM comment WHERE post_id=? AND parent_id IS NULL ORDER BY " + order + " LIMIT ? OFFSET ?",
+        return jdbc.query("SELECT * FROM comment WHERE post_id=? AND parent_id IS NULL AND deleted=FALSE ORDER BY " + order + " LIMIT ? OFFSET ?",
                 this::map, postId, size, offset);
     }
 
     /** 查询某个根评论下的回复；root_id 保证 B 回复 A、C 回复 B 仍在同一棵树。 */
     public List<CommentEntity> replies(long rootId, int size, long beforeId) {
-        return jdbc.query("SELECT * FROM comment WHERE root_id=? AND id<? ORDER BY id DESC LIMIT ?",
+        return jdbc.query("SELECT * FROM comment WHERE root_id=? AND id<? AND deleted=FALSE ORDER BY id DESC LIMIT ?",
                 this::map, rootId, beforeId, size);
     }
 
@@ -86,7 +98,7 @@ public class CommentMapper {
         if (rootIds.isEmpty()) return List.of();
         String marks = rootIds.stream().map(id -> "?").collect(Collectors.joining(","));
         String sql = "SELECT * FROM (SELECT c.*, ROW_NUMBER() OVER (PARTITION BY root_id ORDER BY id DESC) AS rn "
-                + "FROM comment c WHERE root_id IN (" + marks + ")) ranked WHERE rn<=3 ORDER BY root_id,id DESC";
+                + "FROM comment c WHERE deleted=FALSE AND root_id IN (" + marks + ")) ranked WHERE rn<=3 ORDER BY root_id,id DESC";
         return jdbc.query(sql, this::map, rootIds.toArray());
     }
 

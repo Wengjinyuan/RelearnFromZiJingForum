@@ -113,10 +113,19 @@ public class MessageServiceImpl implements MessageService {
         return messages.history(conversationId, query.beforeId(), query.size()).stream().map(this::toVo).toList();
     }
 
-    /** 已读：先验成员，后 UPDATE 自己的 member 行。 */
+    /** 已读：会话未读和由该会话消息产生的通知必须在同一事务中一起清理。 */
     @Transactional
     @Override
-    public void read(long userId, long conversationId) { requireMember(userId, conversationId); members.markRead(conversationId, userId); }
+    public void read(long userId, long conversationId) {
+        requireMember(userId, conversationId);
+        members.markRead(conversationId, userId);
+        notifications.readMessagesForConversation(userId, conversationId);
+    }
+
+    /** 顶部消息红点直接读取会话成员表这个私信未读事实源。 */
+    @Transactional(readOnly = true)
+    @Override
+    public long unreadCount(long userId) { return members.unreadCount(userId); }
 
     /** F10 的资源所有权校验点，不在 Controller 相信 URL 中的会话 ID。 */
     private void requireMember(long userId, long conversationId) {

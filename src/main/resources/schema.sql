@@ -47,8 +47,10 @@ CREATE TABLE IF NOT EXISTS post (
     is_essence BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
+    last_reply_at TIMESTAMP,
     deleted_at TIMESTAMP
 );
+ALTER TABLE post ADD COLUMN IF NOT EXISTS last_reply_at TIMESTAMP;
 
 CREATE INDEX IF NOT EXISTS idx_post_status_category_created
     ON post(status, category, created_at);
@@ -92,6 +94,8 @@ ALTER TABLE comment ADD COLUMN IF NOT EXISTS image_urls CLOB;
 ALTER TABLE comment ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
 CREATE INDEX IF NOT EXISTS idx_comment_post_parent ON comment(post_id, parent_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_comment_root ON comment(root_id, id);
+UPDATE post p SET last_reply_at=(SELECT MAX(c.created_at) FROM comment c WHERE c.post_id=p.id AND c.deleted=FALSE)
+WHERE p.last_reply_at IS NULL;
 
 -- F05：关系表是事实来源；post/comment 上的计数是便于读取的冗余值。
 CREATE TABLE IF NOT EXISTS like_record (

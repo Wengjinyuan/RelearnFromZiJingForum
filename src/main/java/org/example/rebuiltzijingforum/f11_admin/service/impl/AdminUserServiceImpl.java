@@ -2,6 +2,7 @@ package org.example.rebuiltzijingforum.f11_admin.service.impl;
 
 import org.example.rebuiltzijingforum.common.api.PageResponse;
 import org.example.rebuiltzijingforum.common.exception.BusinessException;
+import org.example.rebuiltzijingforum.common.security.Roles;
 import org.example.rebuiltzijingforum.f01_account.dto.CurrentUserDTO;
 import org.example.rebuiltzijingforum.f11_admin.dto.PunishmentDTO;
 import org.example.rebuiltzijingforum.f11_admin.entity.PunishmentEntity;
@@ -49,12 +50,10 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Override
     @Transactional
     public AdminUserVO changeRole(CurrentUserDTO actor, long target, String role) {
-        AdminChecks.admin(actor);
-        if (!"ADMIN".equals(role) && !"USER".equals(role)) throw AdminChecks.bad("ROLE_INVALID", "权限只能是管理员或普通用户");
+        AdminChecks.superAdmin(actor);
+        if (!Roles.ADMIN.equals(role) && !Roles.USER.equals(role)) throw AdminChecks.bad("ROLE_INVALID", "只能设置管理员或普通用户");
         AdminMapper.UserRow user = users.user(target).orElseThrow(() -> AdminChecks.missing("USER_NOT_FOUND", "用户不存在"));
-        if (actor.userId() == target && !"ADMIN".equals(role)) throw AdminChecks.bad("ADMIN_SELF", "不能取消自己的管理员权限");
-        if ("ADMIN".equals(user.role()) && "USER".equals(role) && users.adminCount() <= 1)
-            throw AdminChecks.bad("LAST_ADMIN", "必须保留至少一名管理员");
+        if (Roles.SUPER_ADMIN.equals(user.role())) throw AdminChecks.bad("SUPER_ADMIN_IMMUTABLE", "不能通过管理页面修改超级管理员角色");
         if (role.equals(user.role())) return toVo(user);
         LocalDateTime now = LocalDateTime.now(clock);
         if (users.setUserRole(target, user.role(), role, now) != 1)
@@ -70,7 +69,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         AdminChecks.admin(actor); String why = AdminChecks.reason(input.reason());
         if (actor.userId() == target) throw AdminChecks.bad("ADMIN_SELF", "不能处罚自己");
         AdminMapper.UserRow user = users.user(target).orElseThrow(() -> AdminChecks.missing("USER_NOT_FOUND", "用户不存在"));
-        if ("ADMIN".equals(user.role())) throw AdminChecks.bad("ADMIN_TARGET", "不能处罚管理员");
+        if (Roles.isPrivileged(user.role())) throw AdminChecks.bad("ADMIN_TARGET", "不能处罚管理员或超级管理员");
         String status = switch (action) {
             case "MUTE" -> "MUTED";
             case "BAN" -> "BANNED";

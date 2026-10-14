@@ -115,6 +115,15 @@ public class NotificationServiceImpl implements NotificationService {
         return changed;
     }
 
+    /** 私信页打开某一会话：同步清理该会话产生的通知，并在事务提交后清 Redis 未读缓存。 */
+    @Transactional
+    @Override
+    public int readMessagesForConversation(long userId, long conversationId) {
+        int changed = mapper.readMessagesForConversation(userId, conversationId);
+        if (changed > 0) evictUnread(userId);
+        return changed;
+    }
+
     /** 提交后才删 Redis：避免别的请求在事务提交前读旧 DB、重新填回旧未读数。 */
     private void evictUnread(long userId) {
         NotificationUnreadCache cache = unreadCache.getIfAvailable();

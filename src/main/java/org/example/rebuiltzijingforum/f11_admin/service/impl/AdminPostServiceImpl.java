@@ -36,13 +36,15 @@ public class AdminPostServiceImpl implements AdminPostService {
     /** 后台列表：验管理员/状态/页码后查包含待审和已删除的帖子。 */
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<AdminPostVO> posts(CurrentUserDTO actor, String status, int page, int size) {
+    public PageResponse<AdminPostVO> posts(CurrentUserDTO actor, String status, String keyword, int page, int size) {
         AdminChecks.admin(actor); AdminChecks.page(page, size);
         String filter = status == null ? "" : status.trim().toUpperCase();
         if (!List.of("", "PENDING", "PUBLISHED", "REJECTED", "DELETED").contains(filter))
             throw AdminChecks.bad("STATUS_INVALID", "非法状态");
-        return new PageResponse<>(posts.posts(filter, size, (page-1)*size).stream().map(this::toVo).toList(),
-                posts.postCount(filter), page, size);
+        String pattern = "%" + (keyword == null ? "" : keyword.trim().toLowerCase()
+                .replace("!", "!!").replace("%", "!%").replace("_", "!_")) + "%";
+        return new PageResponse<>(posts.posts(filter, pattern, size, (page-1)*size).stream().map(this::toVo).toList(),
+                posts.postCount(filter, pattern), page, size);
     }
 
     /** 审批/驳回/删除：查旧状态 → 验允许转换 → UPDATE post → INSERT audit → VO。 */

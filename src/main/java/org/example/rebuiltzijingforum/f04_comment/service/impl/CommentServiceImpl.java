@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.rebuiltzijingforum.common.api.PageResponse;
 import org.example.rebuiltzijingforum.common.exception.BusinessException;
 import org.example.rebuiltzijingforum.common.security.PostingPermission;
+import org.example.rebuiltzijingforum.common.security.Roles;
 import org.example.rebuiltzijingforum.f01_account.dto.CurrentUserDTO;
 import org.example.rebuiltzijingforum.f04_comment.mapper.CommentMapper;
 import org.example.rebuiltzijingforum.f04_comment.dto.CreateCommentDTO;
@@ -77,8 +78,9 @@ public class CommentServiceImpl implements CommentService {
             rootId = parent.rootId() == null ? parent.id() : parent.rootId();
             replyUserId = parent.authorId();
         }
-        long id = mapper.insert(postId, user.userId(), input.parentId(), rootId, replyUserId, content, writeImages(images), java.time.LocalDateTime.now(clock));
-        if (mapper.incrementPostCount(postId) != 1) throw error("POST_CHANGED", "帖子状态已变化", HttpStatus.CONFLICT);
+        java.time.LocalDateTime now = java.time.LocalDateTime.now(clock);
+        long id = mapper.insert(postId, user.userId(), input.parentId(), rootId, replyUserId, content, writeImages(images), now);
+        if (mapper.incrementPostCount(postId, now) != 1) throw error("POST_CHANGED", "帖子状态已变化", HttpStatus.CONFLICT);
         // F07 通知与评论在同一事务：回复通知父评论作者；一级评论通知帖子作者。
         long recipient = replyUserId == null ? mapper.postAuthor(postId) : replyUserId;
         notifications.emit(recipient, user.userId(), replyUserId == null ? "COMMENT" : "REPLY", id,
@@ -122,13 +124,15 @@ public class CommentServiceImpl implements CommentService {
         return rows.stream().map(row -> view(row, names)).toList();
     }
 
-    /** 删除前验证作者/管理员；Mapper 保留占位，帖子计数随事务减一。 */
+    /** 删除前验证作者/管理员；根评论删除时整棵回复树一起隐藏，计数保持一致。 */
     @Transactional
     @Override
     public void delete(long id, CurrentUserDTO user) {
         CommentEntity row = mapper.find(id).orElseThrow(() -> error("COMMENT_NOT_FOUND", "评论不存在", HttpStatus.NOT_FOUND));
-        if (row.authorId() != user.userId() && !"ADMIN".equals(user.role())) throw error("COMMENT_FORBIDDEN", "只能删除自己的评论", HttpStatus.FORBIDDEN);
-        if (mapper.markDeleted(id, java.time.LocalDateTime.now(clock)) == 1) mapper.decrementPostCount(row.postId());
+        if (row.authorId() != user.userId() && !Roles.isAdmin(user.role())) throw error("COMMENT_FORBIDDEN", "只能删除自己的评论", HttpStatus.FORBIDDEN);
+        java.time.LocalDateTime now = java.time.LocalDateTime.now(clock);
+        int removed = row.parentId() == null ? mapper.markDeletedTree(id, now) : mapper.markDeleted(id, now);
+        if (removed > 0) mapper.decrementPostCount(row.postId(), removed);
     }
 
     /** 把已删除评论改成占位文字，前端无需看到已删除的原文。 */

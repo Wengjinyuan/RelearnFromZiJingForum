@@ -57,6 +57,15 @@ public class NotificationMapper {
         return jdbc.update("UPDATE notification SET is_read=TRUE WHERE user_id=? AND is_read=FALSE", userId);
     }
 
+    /** target_id 指向 private_message.id，据此只清当前会话对应的私信通知。 */
+    public int readMessagesForConversation(long userId, long conversationId) {
+        return jdbc.update("""
+                UPDATE notification SET is_read=TRUE
+                WHERE user_id=? AND kind='MESSAGE' AND is_read=FALSE
+                  AND target_id IN (SELECT id FROM private_message WHERE conversation_id=?)
+                """, userId, conversationId);
+    }
+
     /** ResultSet 映射为数据库行。 */
     private NotificationEntity map(ResultSet rs, int number) throws SQLException {
         return new NotificationEntity(rs.getLong("id"), rs.getLong("user_id"), rs.getLong("actor_id"), rs.getString("kind"),

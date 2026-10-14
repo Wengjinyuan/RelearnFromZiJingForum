@@ -134,15 +134,16 @@ CommentController.replies
 CommentController.delete
   → CommentServiceImpl.delete               [一个写事务]
     → CommentMapper.find(id)
-    → 比对 authorId 与当前 userId，或检查 role==ADMIN
-    → CommentMapper.markDeleted             [UPDATE deleted/deleted_at]
-    → 仅当刚才更新 1 行：CommentMapper.decrementPostCount
+    → 比对 authorId 与当前 userId，或检查 role 为 ADMIN/SUPER_ADMIN
+    → 根评论：CommentMapper.markDeletedTree [根节点和 root_id 指向它的回复一起软删]
+    → 子回复：CommentMapper.markDeleted     [只软删这一条]
+    → 按实际删除行数：CommentMapper.decrementPostCount
   → HTTP 204
 ```
 
-`find` 找不到时是 `COMMENT_NOT_FOUND`（404）；既不是作者也不是管理员时是 `COMMENT_FORBIDDEN`（403）。`markDeleted` 的 `WHERE deleted=FALSE` 让第二次删除更新 0 行；Service 只有在更新 1 行时才给 `post.comment_count` 减一。重复删除仍返回 204，不重复减计数。
+`find` 找不到时是 `COMMENT_NOT_FOUND`（404）；既不是作者也不是管理员/超级管理员时是 `COMMENT_FORBIDDEN`（403）。更新 SQL 都带 `deleted=FALSE`，第二次删除更新 0 行，因此重复删除不会再次扣计数。
 
-**删除并不执行 SQL DELETE。** `comment` 行及 `parent_id/root_id` 仍在，回复仍可找到这棵楼。之后 `view` 将已删除行的正文换为“该评论已删除”、图片列表变为空列表；现有代码始终展示占位行，不区分它是否有子回复。作者名、作者 id 等其他 VO 字段仍照常返回。`decrementPostCount` 只有在当前值大于零时才减一。
+**删除不执行 SQL DELETE，但公开查询也不会再返回已删除行。** `countRoots/roots/replies/previewReplies` 都过滤 `deleted=FALSE`。删除根评论时若只隐藏根节点，回复会变成没有展示入口的“孤儿”，帖子计数也会和页面不一致，所以当前实现把整棵回复树一起软删除，并按实际行数扣减 `comment_count`；删除一条子回复则只影响它自己。
 
 ## 7. 方法总索引：从一个方法快速找到下一个
 
@@ -157,7 +158,7 @@ CommentController.delete
 | `CommentServiceImpl.create` | Controller 经接口调用 | 权限、校验、`find/insert/incrementPostCount/postAuthor`、通知、`writeImages/namesFor/view` |
 | `CommentServiceImpl.roots` | Controller 经接口调用 | `visiblePost/countRoots/roots/previewReplies/namesFor/view/withReplies` |
 | `CommentServiceImpl.replies` | Controller 经接口调用 | `find/visiblePost/replies/namesFor/view` |
-| `CommentServiceImpl.delete` | Controller 经接口调用 | `find/markDeleted/decrementPostCount` |
+| `CommentServiceImpl.delete` | Controller 经接口调用 | `find/markDeletedTree 或 markDeleted/decrementPostCount` |
 | `CommentServiceImpl.view` | create/roots/replies | `readImages`（未删除时）；构造单个 `CommentVO` |
 | `CommentServiceImpl.namesFor` | create/roots/replies | 去重作者及被回复用户 id → `mapper.accountNames` |
 | `CommentServiceImpl.withReplies` | roots | 复制根 `CommentVO` 并附加预览列表 |
@@ -172,6 +173,7 @@ CommentController.delete
 | `CommentMapper.incrementPostCount` | create | 条件 `UPDATE post` 加一，返回受影响行数 |
 | `CommentMapper.decrementPostCount` | delete 且删除成功 | 条件 `UPDATE post` 减一 |
 | `CommentMapper.markDeleted` | delete | 条件 `UPDATE comment`，返回受影响行数 |
+| `CommentMapper.markDeletedTree` | 删除根评论 | 软删除根节点及其全部回复，返回实际行数 |
 | `CommentMapper.countRoots` | roots | `COUNT(*)` 根评论数 |
 | `CommentMapper.roots` | roots | 按排序和页码查根评论，每行经 `map` |
 | `CommentMapper.replies` | replies | 按 `root_id` 和 `beforeId` 查一批回复，每行经 `map` |
@@ -183,13 +185,13 @@ CommentController.delete
 
 ## 8. 对照实际测试与边界
 
-`src/test/java/org/example/rebuiltzijingforum/FeatureFlowApiTest.java` 中，`commentsInteractionsFollowSearchAndHome` 覆盖无 Token 创建返回 401、成功创建、匿名查列表、非作者删除返回 403；`replyCannotCrossPosts` 覆盖跨帖回复返回 `PARENT_INVALID`；`commentPreviewImagesAndSoftDelete` 覆盖非法图片 URL、回复预览、用户名、软删除后占位和图片清空，以及帖子计数和 `deleted_at`。这是走 MockMvc → 拦截器 → Controller → Service → Mapper → H2 的测试，不能据此声称真实 MySQL 或浏览器已联调。
+`src/test/java/org/example/rebuiltzijingforum/FeatureFlowApiTest.java` 中，`commentsInteractionsFollowSearchAndHome` 覆盖无 Token 创建返回 401、成功创建、匿名查列表、非作者删除返回 403；`replyCannotCrossPosts` 覆盖跨帖回复返回 `PARENT_INVALID`；`commentPreviewImagesAndSoftDelete` 覆盖非法图片 URL、回复预览、用户名，以及删除根评论后公开列表为空、整棵树已软删、帖子计数归零。这是走 MockMvc → 拦截器 → Controller → Service → Mapper → H2 的测试。
 
 读代码时还要注意当前实现的准确口径：
 
-- `countRoots/roots/previewReplies/replies` **没有过滤 `deleted=FALSE`**。所以删除的根评论仍在根评论 `total` 和列表里，占位可见；`post.comment_count` 却在删除时减少，二者不是同一个口径。
+- `countRoots/roots/previewReplies/replies` 使用同一个 `deleted=FALSE` 可见性口径；若将来需要“删除占位但保留回复”，必须重新设计根评论 total、回复入口和计数语义，不能只删掉这个过滤条件。
 - `GET /replies` 的 `beforeId` 是 `id` 游标，不是时间戳；返回按 id 降序。根评论页的 `hot/asc/desc` 是另一套排序逻辑。
-- `parentId` 指向已删除父评论时不能新建回复；已经存在的子回复仍可在列表中看到。
+- `parentId` 指向已删除父评论时不能新建回复；根评论删除时已有子回复也会一起软删。
 - 图片目前只是 HTTPS URL 字符串，`image_urls` 存 JSON；并无本地文件上传功能。
 
 建议亲手跟一次调用：给帖子发根评论 → 回复它 → 回复这条回复 → GET 根评论页 → GET 楼中楼 → 删除根评论 → 再 GET。每一步在 `CommentServiceImpl` 停下，记下 `parentId/rootId/replyUserId`、`post.comment_count` 和最终 `CommentVO`，就能把方法间关系串起来。

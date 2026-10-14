@@ -13,14 +13,16 @@
             overflow-y: scroll;
         }
 
-        /*!* ai 搜索 *!*/
-        /*.ai-search {*/
-        /*    background-color: #f9f9fc;*/
-        /*    border-radius: var(--radius);*/
-        /*    padding: 18px;*/
-        /*    margin-bottom: 16px;*/
-        /*    height: 50px;*/
-        /*}*/
+        .ai-search { background:#f9f7ff; border:1px solid var(--purple-200); border-radius:var(--radius);
+            padding:16px; margin-bottom:16px; }
+        .ai-search-row { display:flex; gap:10px; }
+        .ai-search input { flex:1; border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+        .ai-search button { border:0; border-radius:8px; padding:0 18px; color:#fff;
+            background:var(--purple-600); cursor:pointer; }
+        .ai-search button:disabled { opacity:.55; cursor:not-allowed; }
+        .ai-answer { margin-top:12px; line-height:1.7; white-space:pre-wrap; color:#343044; }
+        .ai-sources { margin-top:8px; font-size:13px; color:var(--muted); }
+        .category-filter { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
 
         /* 顶部占位(顶栏由组件动态加载) 保持与原站一致 */
         .search-main {
@@ -542,11 +544,32 @@
             <!-- 帖子区域：筛选栏 + 列表 -->
             <div v-if="activeTab === 'post'">
                 <div class="ai-search">
+                    <div class="ai-search-row">
+                        <input v-model.trim="aiQuestion" maxlength="300" placeholder="让 AI 根据论坛帖子回答，例如：最近有哪些校园活动？"
+                            @keyup.enter="askAi">
+                        <button @click="askAi" :disabled="aiLoading || !aiAvailable">
+                            {{ aiLoading ? '分析中...' : 'AI 搜索' }}
+                        </button>
+                    </div>
+                    <div v-if="aiMessage" class="ai-sources">{{ aiMessage }}</div>
+                    <div v-if="aiAnswer" class="ai-answer">{{ aiAnswer }}</div>
+                    <div v-if="aiSources.length" class="ai-sources">
+                        依据：
+                        <a v-for="source in aiSources" :key="source.id" href="#" @click.prevent="viewPostDetail(source.id)">
+                            [帖子 #{{ source.id }}] {{ source.title }}
+                        </a>
+                    </div>
                 </div>
                 <div class="filter-sort-bar">
                     <div class="sort-group">
                         <button v-for="opt in sortOptions" :key="opt.value" class="sort-chip"
                             :class="{ active: postSort === opt.value }" @click="changePostSort(opt.value)">
+                            {{ opt.label }}
+                        </button>
+                    </div>
+                    <div class="category-filter">
+                        <button v-for="opt in categoryOptions" :key="opt.value" class="sort-chip"
+                            :class="{ active: postCategory === opt.value }" @click="changePostCategory(opt.value)">
                             {{ opt.label }}
                         </button>
                     </div>
@@ -664,7 +687,7 @@
                                 <div class="user-bio">{{ user.signature || user.bio || '这个人很懒，什么都没写~' }}</div>
                             </div>
                         </div>
-                        <button class="follow-user-btn" :class="{ following: user.isFollowed }"
+                        <button v-if="String(user.id) !== String(currentUserId)" class="follow-user-btn" :class="{ following: user.isFollowed }"
                             @click.stop="toggleFollowUser(user)">
                             {{ user.isFollowed ? '已关注' : '+ 关注' }}
                         </button>
@@ -702,6 +725,13 @@
                 keyword: '',          // 从 URL 获取
                 activeTab: 'post',        // post / user
                 postSort: 'relevance',
+                postCategory: 'all',
+                categoryOptions: [
+                    { value: 'all', label: '全部分类' }, { value: '校园资讯', label: '校园资讯' },
+                    { value: '学习交流', label: '学习交流' }, { value: '社团活动', label: '社团活动' },
+                    { value: '二手交易', label: '二手交易' }, { value: '生活服务', label: '生活服务' },
+                    { value: '校园树洞', label: '校园树洞' }, { value: '公告', label: '公告' }
+                ],
                 sortOptions: [
                     { value: 'relevance', label: '综合排序' },
                     { value: 'latest', label: '最新发布' },
@@ -719,13 +749,20 @@
                 defaultAvatar: '../img/头像示例.jpg',
                 showBackTop: false,
                 toastMsg: ''
+                ,currentUserId: localStorage.getItem('userId')
+                ,aiQuestion: ''
+                ,aiLoading: false
+                ,aiAvailable: false
+                ,aiAnswer: ''
+                ,aiSources: []
+                ,aiMessage: localStorage.getItem('token') ? '正在检查 AI 搜索配置…' : '登录后可使用 AI 搜索'
             },
             computed: {
                 // 可额外
             },
             mounted() {
                 // 获取 URL 参数 ?q=xxx
-                postLoadingMore = true;
+                this.postLoadingMore = true;
                 const urlParams = new URLSearchParams(window.location.search);
                 const query = urlParams.get('q');
                 if (query && query.trim()) {
@@ -734,6 +771,7 @@
                     window.location.href = '../index.html';
                 }
                 this.performSearch();
+                this.loadAiStatus();
                 window.addEventListener('scroll', this.handleScroll);
             },
             beforeDestroy() {
@@ -760,6 +798,14 @@
                     this.postHasMore = true;
                     this.searchPosts();
                 },
+                changePostCategory(category) {
+                    if (this.postCategory === category) return;
+                    this.postCategory = category;
+                    this.postPage = 0;
+                    this.postList = [];
+                    this.postHasMore = true;
+                    this.searchPosts();
+                },
                 // 搜索功能
                 performSearch() {
                     if (this.activeTab === 'post') {
@@ -776,13 +822,14 @@
                             keyword: this.keyword,
                             current: this.postPage,
                             size: 10,
-                            sort: this.postSort
+                            sort: this.postSort,
+                            category: this.postCategory
                         }
                     })
                         .then(response => {
                             console.log('请求成功', response.data)
                             this.postList = response.data.list
-                            this.postPag = response.data.current
+                            this.postPage = Math.max(0, Number(response.data.current || 1) - 1)
                             this.postHasMore = response.data.hasNext
                         })
                         .catch(error => {
@@ -803,6 +850,7 @@
                         .then(res => {
                             if (res.data && Array.isArray(res.data.list)) {
                                 this.userList = res.data.list;
+                                this.loadFollowStates();
                             } else {
                                 this.userList = [];
                             }
@@ -813,7 +861,7 @@
                     if (this.postLoadingMore || !this.postHasMore) return;
                     this.postLoadingMore = true;
                     this.postPage++;
-                    axios.get('/api/post/search', { params: { keyword: this.keyword, current: this.postPage, size: 10, sort: this.postSort } })
+                    axios.get('/api/post/search', { params: { keyword: this.keyword, current: this.postPage, size: 10, sort: this.postSort, category: this.postCategory } })
                         .then(res => {
                             if (res.data && Array.isArray(res.data.list)) {
                                 const newPosts = res.data.list;
@@ -827,8 +875,52 @@
                         .finally(() => { this.postLoadingMore = false; });
                 },
                 toggleFollowUser(user) {
-                    user.isFollowed = !user.isFollowed;
-                    this.showToast(user.isFollowed ? `已关注 ${user.username}` : `已取消关注`);
+                    if (!localStorage.getItem('token')) {
+                        window.location.href = '../login.html?redirect=' + encodeURIComponent(location.pathname + location.search);
+                        return;
+                    }
+                    const request = user.isFollowed
+                        ? axios.delete(`/api/user/follow/${user.id}`)
+                        : axios.post(`/api/user/follow/${user.id}`);
+                    request.then(() => {
+                        user.isFollowed = !user.isFollowed;
+                        this.showToast(user.isFollowed ? `已关注 ${user.username || user.account}` : '已取消关注');
+                    }).catch(error => this.showToast(error.response?.data?.message || '关注操作失败'));
+                },
+                loadFollowStates() {
+                    if (!localStorage.getItem('token')) return;
+                    this.userList.forEach(user => {
+                        if (String(user.id) === String(this.currentUserId)) return;
+                        axios.get(`/api/user/follow/status/${user.id}`)
+                            .then(response => { this.$set(user, 'isFollowed', !!response.data.data); })
+                            .catch(() => {});
+                    });
+                },
+                loadAiStatus() {
+                    if (!localStorage.getItem('token')) return;
+                    axios.get('/api/search/ai/status').then(response => {
+                        this.aiAvailable = !!response.data.data?.available;
+                        this.aiMessage = this.aiAvailable
+                            ? 'AI 会先检索论坛帖子，再基于检索结果回答。'
+                            : 'AI 搜索尚未启用，请配置 FORUM_AI_API_KEY 并开启 forum.search.ai.enabled。';
+                    }).catch(() => {
+                        this.aiAvailable = false;
+                        this.aiMessage = 'AI 搜索状态暂时不可用。';
+                    });
+                },
+                askAi() {
+                    if (!this.aiQuestion || this.aiLoading || !this.aiAvailable) return;
+                    this.aiLoading = true;
+                    this.aiAnswer = '';
+                    this.aiSources = [];
+                    axios.post('/api/search/ai', { question: this.aiQuestion }).then(response => {
+                        const data = response.data.data || {};
+                        this.aiAnswer = data.answer || '没有生成回答';
+                        this.aiSources = data.sources || [];
+                        this.aiMessage = data.rewrittenKeyword ? `检索关键词：${data.rewrittenKeyword}` : '';
+                    }).catch(error => {
+                        this.aiMessage = error.response?.data?.message || 'AI 搜索失败，请稍后重试';
+                    }).finally(() => { this.aiLoading = false; });
                 },
                 viewPostDetail(postId) {
                     window.open(`./detail.html?postId=${postId}`, '_blank');

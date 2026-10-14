@@ -21,8 +21,9 @@ public class SearchController {
     @GetMapping("/posts")
     public ApiResponse<PageResponse<PostSearchVO>> posts(@RequestParam(required = false) String keyword,
             @RequestParam(required = false) String q, @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size, @RequestParam(defaultValue = "relevance") String sort) {
-        return ApiResponse.success(service.posts(new SearchDTO(q == null ? keyword : q, page, size, sort)));
+            @RequestParam(defaultValue = "20") int size, @RequestParam(defaultValue = "relevance") String sort,
+            @RequestParam(required = false) String category) {
+        return ApiResponse.success(service.posts(new SearchDTO(q == null ? keyword : q, page, size, sort, category)));
     }
 
     /** 用户搜索入口：只搜账号、昵称和签名，返回公开字段。 */
@@ -30,6 +31,6 @@ public class SearchController {
     public ApiResponse<PageResponse<UserSearchVO>> users(@RequestParam(required = false) String keyword,
             @RequestParam(required = false) String q, @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.success(service.users(new SearchDTO(q == null ? keyword : q, page, size, "relevance")));
+        return ApiResponse.success(service.users(new SearchDTO(q == null ? keyword : q, page, size, "relevance", null)));
     }
 }

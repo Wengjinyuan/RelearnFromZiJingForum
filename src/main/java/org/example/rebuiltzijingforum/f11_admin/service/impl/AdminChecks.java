@@ -1,6 +1,7 @@
 package org.example.rebuiltzijingforum.f11_admin.service.impl;
 
 import org.example.rebuiltzijingforum.common.exception.BusinessException;
+import org.example.rebuiltzijingforum.common.security.Roles;
 import org.example.rebuiltzijingforum.f01_account.dto.CurrentUserDTO;
 import org.springframework.http.HttpStatus;
 
@@ -10,7 +11,13 @@ final class AdminChecks {
 
     /** 身份合法不等于有权限：普通用户即使带 JWT 也不能进入管理业务。 */
     static void admin(CurrentUserDTO actor) {
-        if (!"ADMIN".equals(actor.role())) throw new BusinessException("ADMIN_FORBIDDEN", "需要管理员权限", HttpStatus.FORBIDDEN);
+        if (!Roles.isAdmin(actor.role())) throw new BusinessException("ADMIN_FORBIDDEN", "需要管理员权限", HttpStatus.FORBIDDEN);
+    }
+
+    /** 只有超级管理员能授予或撤销 ADMIN；普通管理员只能做内容和用户治理。 */
+    static void superAdmin(CurrentUserDTO actor) {
+        if (!Roles.isSuperAdmin(actor.role()))
+            throw new BusinessException("SUPER_ADMIN_FORBIDDEN", "只有超级管理员可以设置或撤销管理员", HttpStatus.FORBIDDEN);
     }
 
     /** 限制分页大小，避免后台列表一次拉取过多。 */

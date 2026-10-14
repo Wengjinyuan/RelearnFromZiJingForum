@@ -1,4 +1,4 @@
-﻿// components/TopBar.js
+// components/TopBar.js
 // 顶部导航栏组件
 Vue.component('top-bar', {
     template: `
@@ -93,7 +93,7 @@ Vue.component('top-bar', {
                                     </svg>
                                     个人信息
                                 </div>
-                                <div class="dropdown-item" v-if="userRole > 0" @click="goToAdmin">
+                                <div class="dropdown-item" v-if="userRole >= 2" @click="goToAdmin">
                                     <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                                     </svg>
@@ -110,7 +110,7 @@ Vue.component('top-bar', {
                             </div>
                         </div>
                     </div>
-                    <button v-if="userRole === 2" class="compose-fab" @click="goToAdmin">管理后台</button>
+                    <button v-if="userRole >= 2" class="compose-fab" @click="goToAdmin">管理后台</button>
                     <button class="compose-fab" @click="openCompose">＋ 发布新帖</button>
                 </div>
             </div>
@@ -139,6 +139,11 @@ Vue.component('top-bar', {
     mounted() {
         this.calculateBasePath();
         this.loadUserInfo();
+        this.loadCurrentRole();
+        window.addEventListener('message-unread-changed', this.fetchUnreadCount);
+    },
+    beforeDestroy() {
+        window.removeEventListener('message-unread-changed', this.fetchUnreadCount);
     },
     methods: {
         refreshStats() {
@@ -188,7 +193,6 @@ Vue.component('top-bar', {
                 this.followerCount = user.followerCount || this.followerCount;
                 this.followingCount = user.followingCount || this.followingCount;
                 this.myPostCount = user.postCount || user.myPostCount || this.myPostCount;
-                this.userRole = 0;
             }
 
             if (this.userId && this.userId !== 'null') {
@@ -215,9 +219,6 @@ Vue.component('top-bar', {
                             this.followingCount = stats.followingCount || 0;
                             this.myPostCount = stats.postCount || 0;
                         }).catch(() => {});
-                        axios.get('/api/user/current').then(accountResponse => {
-                            this.userRole = Number(accountResponse.data.data?.role) || 0;
-                        }).catch(() => { this.userRole = 0; });
                         this.fetchUnreadCount();
                     })
                     .catch(error => {
@@ -253,6 +254,17 @@ Vue.component('top-bar', {
             //             console.error('顶部栏获取用户信息失败:', error);
             //         });
             // }
+        },
+
+        loadCurrentRole() {
+            if (!localStorage.getItem('token')) {
+                this.userRole = 0;
+                return;
+            }
+            axios.get('/api/user/current').then(response => {
+                this.userRole = Number(response.data.data?.role) || 0;
+                localStorage.setItem('role', String(this.userRole));
+            }).catch(() => { this.userRole = 0; });
         },
 
         formatUserId(id) {
@@ -367,9 +379,9 @@ Vue.component('top-bar', {
                 this.messageCount = 0;
                 return;
             }
-            axios.get('/api/notification/unreadCount')
+            axios.get('/api/messages/unread-count')
                 .then(response => {
-                    if (response.data.code === 1) this.messageCount = response.data.data || 0;
+                    if (response.data.code === 1) this.messageCount = Number(response.data.data?.count) || 0;
                 })
                 .catch(() => {});
         },

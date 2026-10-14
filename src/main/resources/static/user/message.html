@@ -1,557 +1,184 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>紫荆论坛 · 消息中心</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紫荆论坛 · 私信</title>
     <link rel="icon" type="image/x-icon" href="../img/zj_icon.ico">
     <link rel="stylesheet" href="../css/common.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg: #ffffff;
-            --card: #ffffff;
-            --muted: #8b8fa3;
-            --purple-50: #f5eefc;
-            --purple-100: #e9dbfb;
-            --purple-200: #d4bbf8;
-            --purple-500: #7b4ef6;
-            --purple-600: #6a3be0;
-            --accent: #ff7ab6;
-            --line: #e9e6f3;
-            --shadow: 0 8px 24px rgba(103, 72, 193, 0.12);
-            --radius: 6px;
-            font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
-            color-scheme: light;
-        }
-
-        body {
-            background: var(--bg);
-            color: #1e1e2a;
-            -webkit-font-smoothing: antialiased;
-        }
-
-
-
-        /* 横幅区域 消息头 */
-        .msg-header {
-            max-width: 1180px;
-            margin: 24px auto 0;
-            padding: 0 16px;
-        }
-
-        .msg-banner {
-            background: linear-gradient(135deg, #f9f6ff, #ffffff);
-            border-radius: var(--radius);
-            border: 1px solid var(--line);
-            padding: 18px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .msg-title h2 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1e1e2a;
-        }
-
-        .msg-title p {
-            font-size: 13px;
-            color: var(--muted);
-            margin-top: 6px;
-        }
-
-        .mark-all-btn {
-            background: var(--purple-50);
-            border: 1px solid var(--purple-200);
-            padding: 8px 18px;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--purple-600);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .mark-all-btn:hover {
-            background: var(--purple-100);
-        }
-
-        /* 主体容器 */
-        .msg-container {
-            max-width: 1148px;
-            margin: 12px auto 40px;
-            padding: 0 16px;
-        }
-
-        /* tabs 分类 */
-        .tabs-wrapper {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            padding: 6px;
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .msg-tab {
-            background: transparent;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--muted);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .msg-tab.active {
-            background: linear-gradient(90deg, var(--purple-500), var(--purple-600));
-            color: white;
-            box-shadow: var(--shadow);
-        }
-
-        .msg-tab .badge-count {
-            display: inline-block;
-            margin-left: 6px;
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 30px;
-            padding: 0 6px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .msg-tab.active .badge-count {
-            background: rgba(255, 255, 255, 0.25);
-        }
-
-        /* 消息卡片通用样式 */
-        .msg-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .msg-card {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            padding: 16px 18px;
-            transition: all 0.2s;
-            cursor: pointer;
-            position: relative;
-            display: flex;
-            gap: 14px;
-            align-items: flex-start;
-        }
-
-        .msg-card.unread {
-            background: #fefbff;
-            border-left: 3px solid var(--purple-500);
-            box-shadow: 0 2px 8px rgba(123, 78, 246, 0.06);
-        }
-
-        .msg-card.read {
-            opacity: 0.7;
-            border-left: 3px solid transparent;
-        }
-
-        .msg-card.read .msg-user {
-            color: var(--muted);
-        }
-
-        .msg-card.read .msg-text {
-            color: #a0a4b8;
-        }
-
-        .msg-card:hover {
-            background: var(--purple-50);
-            transform: translateY(-1px);
-        }
-
-        .msg-card.read:hover {
-            opacity: 0.85;
-        }
-
-        /* 头像区域 */
-        .msg-avatar {
-            flex-shrink: 0;
-        }
-
-        .msg-avatar img {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid var(--purple-200);
-        }
-
-        .msg-content {
-            flex: 1;
-        }
-
-        .msg-header-line {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .msg-user {
-            font-weight: 700;
-            font-size: 15px;
-            color: #1e1e2a;
-        }
-
-        .msg-badge {
-            background: var(--purple-100);
-            color: var(--purple-600);
-            font-size: 11px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 14px;
-            margin-left: 8px;
-        }
-
-        .msg-time {
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        .msg-text {
-            font-size: 14px;
-            color: #3a3c4a;
-            margin: 6px 0 6px;
-            line-height: 1.45;
-        }
-
-        .dot-unread {
-            width: 8px;
-            height: 8px;
-            background: var(--accent);
-            border-radius: 50%;
-            position: absolute;
-            left: 10px;
-            top: 22px;
-        }
-
-        .empty-state {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            padding: 56px 20px;
-            text-align: center;
-            color: var(--muted);
-            font-size: 14px;
-        }
-
-        .load-more {
-            text-align: center;
-            padding: 16px 0;
-            color: var(--purple-600);
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .load-more:hover {
-            color: var(--purple-500);
-        }
-
-        .footer {
-            max-width: 1180px;
-            margin: 28px auto;
-            padding: 22px 16px;
-            text-align: center;
-            color: var(--muted);
-            font-size: 13px;
-            border-top: 1px solid var(--line);
-        }
-
-
-
-        @media (max-width: 860px) {
-            .msg-header-line {
-                flex-direction: column;
-                gap: 4px;
-            }
-        }
-
-        @media (max-width: 560px) {
-            .msg-card {
-                flex-direction: column;
-            }
-
-            .msg-avatar img {
-                width: 40px;
-                height: 40px;
-            }
-        }
-    </style>
     <script src="../js/vue.js"></script>
     <script src="../js/axios-0.18.0.js"></script>
     <script src="../js/axios-config.js"></script>
+    <style>
+        body { margin:0; background:#f7f7fb; color:#222238; font-family:"PingFang SC","Microsoft YaHei",sans-serif; }
+        .message-shell { width:min(1120px,calc(100% - 32px)); height:calc(100vh - 104px); min-height:560px; margin:24px auto; display:grid; grid-template-columns:320px 1fr; background:#fff; border:1px solid #ebe8f3; border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(74,52,130,.08); }
+        .conversation-panel { border-right:1px solid #ebe8f3; overflow:auto; }
+        .panel-title { padding:20px; font-size:20px; font-weight:700; border-bottom:1px solid #ebe8f3; }
+        .conversation { padding:16px 18px; border-bottom:1px solid #f1eff6; cursor:pointer; display:flex; gap:12px; }
+        .conversation:hover,.conversation.active { background:#f6f1ff; }
+        .avatar { width:44px; height:44px; flex:0 0 44px; border-radius:50%; background:#7654da; color:#fff; display:grid; place-items:center; font-weight:700; }
+        .conversation-main { min-width:0; flex:1; }
+        .conversation-line { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+        .peer { font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .preview,.time,.empty-tip { color:#8b8798; font-size:13px; }
+        .preview { margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .badge { min-width:20px; height:20px; padding:0 6px; display:grid; place-items:center; border-radius:10px; background:#e5484d; color:#fff; font-size:12px; }
+        .chat-panel { display:flex; flex-direction:column; min-width:0; }
+        .chat-header { height:68px; padding:0 22px; border-bottom:1px solid #ebe8f3; display:flex; align-items:center; justify-content:space-between; }
+        .chat-title { font-weight:700; font-size:17px; }
+        .profile-link { color:#6a3be0; cursor:pointer; font-size:13px; }
+        .messages { flex:1; overflow:auto; padding:22px; background:#fbfafe; }
+        .message-row { display:flex; margin:10px 0; }
+        .message-row.mine { justify-content:flex-end; }
+        .bubble { max-width:72%; padding:10px 13px; border-radius:12px; background:#fff; border:1px solid #ebe8f3; white-space:pre-wrap; overflow-wrap:anywhere; }
+        .mine .bubble { color:#fff; background:#7654da; border-color:#7654da; }
+        .message-time { margin-top:5px; opacity:.65; font-size:11px; }
+        .composer { padding:14px 18px; border-top:1px solid #ebe8f3; display:flex; gap:12px; }
+        .composer textarea { flex:1; min-height:54px; max-height:120px; resize:vertical; padding:10px 12px; border:1px solid #dcd7e8; border-radius:9px; font:inherit; outline:none; }
+        .composer textarea:focus { border-color:#7654da; }
+        .send { width:88px; border:0; border-radius:9px; background:#7654da; color:#fff; font-weight:650; cursor:pointer; }
+        .send:disabled { opacity:.5; cursor:not-allowed; }
+        .center { height:100%; display:grid; place-items:center; text-align:center; color:#8b8798; padding:24px; }
+        .error { padding:10px 16px; background:#fff2f2; color:#c83737; font-size:13px; }
+        @media(max-width:760px){ .message-shell{grid-template-columns:1fr;height:auto;min-height:calc(100vh - 88px)} .conversation-panel{max-height:250px;border-right:0;border-bottom:1px solid #ebe8f3}.chat-panel{min-height:560px} }
+    </style>
 </head>
-
 <body>
-    <div id="topbar-container"></div>
-    <div id="app">
-
-        <!-- 消息横幅 -->
-        <div class="msg-header">
-            <div class="msg-banner">
-                <div class="msg-title">
-                    <h2>消息中心</h2>
-                    <p>评论 · 点赞 · 收藏 · 系统通知 — 与你相关的所有互动</p>
+<div id="topbar-container"></div>
+<div id="app" class="message-shell">
+    <aside class="conversation-panel">
+        <div class="panel-title">私信</div>
+        <div v-if="loadingConversations" class="empty-tip" style="padding:20px">正在加载会话...</div>
+        <div v-for="item in conversations" :key="item.id" class="conversation"
+             :class="{active: activeConversation && activeConversation.id === item.id}" @click="openConversation(item)">
+            <div class="avatar">{{ (item.peerAccount || '?').slice(0,1).toUpperCase() }}</div>
+            <div class="conversation-main">
+                <div class="conversation-line">
+                    <span class="peer">{{ item.peerAccount }}</span>
+                    <span v-if="item.unreadCount" class="badge">{{ item.unreadCount > 99 ? '99+' : item.unreadCount }}</span>
                 </div>
-                <button class="mark-all-btn" @click="markAllAsRead">全部标为已读</button>
+                <div class="conversation-line">
+                    <span class="preview">{{ item.lastContent || '暂无消息' }}</span>
+                    <span class="time">{{ shortTime(item.lastMessageAt) }}</span>
+                </div>
             </div>
         </div>
-
-        <div class="msg-container">
-            <!-- 分类 Tabs -->
-            <div class="tabs-wrapper">
-                <button v-for="tab in tabList" :key="tab.key" class="msg-tab" :class="{ active: activeTab === tab.key }"
-                    @click="switchTab(tab.key)">
-                    {{ tab.label }}
-                </button>
-            </div>
-
-            <!-- 消息列表 -->
-            <div class="msg-list" v-if="notifications.length">
-                <div v-for="msg in notifications" :key="msg.id" class="msg-card" :class="{ unread: !msg.isRead }"
-                    @click="handleMsgClick(msg)">
-                    <div class="msg-avatar">
-                        <img :src="resolveAvatar(msg.avatar)" alt="avatar" loading="lazy"
-                            @error="onAvatarError($event)">
-                    </div>
-                    <div class="msg-content">
-                        <div class="msg-header-line">
-                            <div>
-                                <span class="msg-user">{{ msg.username || '未知用户' }}</span>
-                                <span class="msg-badge">{{ getTypeLabel(msg.type) }}</span>
-                            </div>
-                            <span class="msg-time">{{ formatTimeAgo(msg.createdTime) }}</span>
-                        </div>
-                        <div class="msg-text">{{ msg.content }}</div>
-                    </div>
-                    <div class="dot-unread" v-if="!msg.isRead"></div>
-                </div>
-                <div class="load-more" v-if="pageResult.hasNext" @click="loadMore">
-                    <span v-if="!loading">加载更多</span>
-                    <span v-else>加载中...</span>
-                </div>
-            </div>
-            <div v-else-if="!loading" class="empty-state">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                <p>暂无{{ currentTabLabel }}消息</p>
-            </div>
-            <div v-else class="empty-state">
-                <p>加载中...</p>
-            </div>
+        <div v-if="!loadingConversations && conversations.length === 0" class="empty-tip" style="padding:20px">
+            暂无会话，可从其他用户主页点击“私信”开始聊天。
         </div>
-        <div class="global-toast"
-            :class="{ show: toastVisible, success: toastType === 'success', error: toastType === 'error' }">{{
-            toastMessage }}</div>
-    </div>
+    </aside>
 
-    <script src="../components/TopBar.js"></script>
-    <script>
-        new Vue({ el: '#topbar-container', template: '<top-bar></top-bar>' });
-    </script>
-    <script>
-        new Vue({
-            el: '#app',
-            data: {
-                activeTab: 'all',
-                loading: false,
-                notifications: [],
-                pageResult: { current: 1, size: 15, total: 0, pages: 0, hasNext: false },
-                tabList: [
-                    { key: 'all', label: '全部' },
-                    { key: 'reply', label: '评论' },
-                    { key: 'like', label: '点赞' },
-                    { key: 'favor', label: '收藏' },
-                    { key: 'system', label: '系统' }
-                ],
-                defaultAvatar: '../img/头像示例.jpg',
-                toastVisible: false,
-                toastMessage: '',
-                toastType: 'info',
-                toastTimer: null
-            },
-            computed: {
-                currentTabLabel() {
-                    const found = this.tabList.find(t => t.key === this.activeTab);
-                    return found ? found.label : '全部';
+    <main class="chat-panel">
+        <template v-if="activePeerId">
+            <header class="chat-header">
+                <span class="chat-title">{{ activePeerName }}</span>
+                <span class="profile-link" @click="viewPeer">查看主页</span>
+            </header>
+            <div v-if="errorMessage" class="error">{{ errorMessage }}</div>
+            <section class="messages" ref="messages">
+                <div v-if="loadingMessages" class="center">正在加载消息...</div>
+                <div v-else-if="messages.length === 0" class="center">还没有消息，发一句问候吧。</div>
+                <div v-for="msg in messages" :key="msg.id" class="message-row" :class="{mine: String(msg.senderId) === String(currentUserId)}">
+                    <div class="bubble">
+                        <div>{{ msg.content }}</div>
+                        <div class="message-time">{{ formatTime(msg.createdAt) }}</div>
+                    </div>
+                </div>
+            </section>
+            <footer class="composer">
+                <textarea v-model="draft" maxlength="4000" placeholder="输入私信，Enter 发送，Shift+Enter 换行" @keydown.enter.exact.prevent="sendMessage"></textarea>
+                <button class="send" :disabled="sending || !draft.trim()" @click="sendMessage">{{ sending ? '发送中' : '发送' }}</button>
+            </footer>
+        </template>
+        <div v-else class="center">选择左侧会话，或从用户主页发起私信。</div>
+    </main>
+</div>
+
+<script src="../components/TopBar.js"></script>
+<script>new Vue({el:'#topbar-container',template:'<top-bar></top-bar>'});</script>
+<script>
+new Vue({
+    el:'#app',
+    data:{
+        conversations:[], activeConversation:null, activePeerId:null, activePeerName:'',
+        messages:[], draft:'', currentUserId:localStorage.getItem('userId'),
+        loadingConversations:false, loadingMessages:false, sending:false, errorMessage:'', pollTimer:null
+    },
+    mounted(){
+        if(!localStorage.getItem('token')) { location.href='../login.html?redirect='+encodeURIComponent(location.pathname+location.search); return; }
+        const targetId=new URLSearchParams(location.search).get('targetId');
+        this.loadConversations().then(()=> targetId && this.openTarget(targetId));
+        this.pollTimer=setInterval(()=>this.refreshActive(),5000);
+    },
+    beforeDestroy(){ if(this.pollTimer) clearInterval(this.pollTimer); },
+    methods:{
+        async loadConversations(){
+            this.loadingConversations=true;
+            try{
+                const response=await axios.get('/api/messages/conversations');
+                this.conversations=response.data.data||[];
+                if(this.activeConversation){
+                    const fresh=this.conversations.find(x=>String(x.id)===String(this.activeConversation.id));
+                    if(fresh) this.activeConversation=fresh;
                 }
-            },
-            mounted() {
-                this.loadNotifications();
-                window.addEventListener('scroll', this.handleScroll);
-            },
-            beforeDestroy() {
-                window.removeEventListener('scroll', this.handleScroll);
-                if (this.toastTimer) clearTimeout(this.toastTimer);
-            },
-            methods: {
-                loadNotifications() {
-                    if (this.loading) return;
-                    this.loading = true;
-                    axios.get('/api/notification/list', {
-                        params: {
-                            current: this.pageResult.current,
-                            size: this.pageResult.size,
-                            sort: this.activeTab
-                        }
-                    }).then(response => {
-                        const data = response.data;
-                        const records = data.records || [];
-                        if (this.pageResult.current === 1) {
-                            this.notifications = records;
-                        } else {
-                            this.notifications = this.notifications.concat(records);
-                        }
-                        this.pageResult = {
-                            current: data.current,
-                            size: data.size,
-                            total: data.total,
-                            pages: data.pages,
-                            hasNext: data.hasNext
-                        };
-                    }).catch(error => {
-                        console.error('加载消息失败:', error);
-                    }).finally(() => {
-                        this.loading = false;
-                    });
-                },
-                loadMore() {
-                    if (this.pageResult.hasNext && !this.loading) {
-                        this.pageResult.current++;
-                        this.loadNotifications();
-                    }
-                },
-                switchTab(tab) {
-                    if (this.activeTab === tab) return;
-                    this.activeTab = tab;
-                    this.pageResult.current = 1;
-                    this.notifications = [];
-                    this.loadNotifications();
-                },
-                markAllAsRead() {
-                    const unreadIds = this.notifications
-                        .filter(n => !n.isRead)
-                        .map(n => ({ id: n.id }));
-                    if (unreadIds.length === 0) {
-                        this.showToast('没有未读消息', 'info');
-                        return;
-                    }
-                    axios.put('/api/notification/readAll', unreadIds)
-                        .then(response => {
-                            if (response.data.code === 1) {
-                                this.notifications.forEach(n => { n.isRead = true; });
-                                this.showToast('已全部标为已读', 'success');
-                            } else {
-                                this.showToast('操作失败', 'error');
-                            }
-                        })
-                        .catch(() => {
-                            this.showToast('操作失败', 'error');
-                        });
-                },
-                handleMsgClick(msg) {
-                    if (msg.targetId) {
-                        if (!msg.isRead) {
-                            msg.isRead = true;
-                            axios.put(`/api/notification/read/${msg.id}`).finally(() => {
-                                window.location.href = `../post/detail.html?postId=${msg.targetId}`;
-                            });
-                        } else {
-                            window.location.href = `../post/detail.html?postId=${msg.targetId}`;
-                        }
-                    }
-                },
-                getTypeLabel(type) {
-                    const map = {
-                        'like': '点赞',
-                        'like_comment': '点赞',
-                        'comment': '评论',
-                        'reply_comment': '回复',
-                        'favorite': '收藏',
-                        'follow': '关注',
-                        'system': '系统',
-                        'top': '置顶',
-                        'essence': '精华',
-                        'delete': '删除'
-                    };
-                    return map[type] || '通知';
-                },
-                formatTimeAgo(dateTime) {
-                    if (!dateTime) return '';
-                    const targetTime = new Date(dateTime);
-                    const now = new Date();
-                    const diffMs = now - targetTime;
-                    const diffSeconds = Math.floor(diffMs / 1000);
-                    if (diffSeconds < 60) return '刚刚';
-                    const diffMinutes = Math.floor(diffSeconds / 60);
-                    if (diffMinutes < 60) return `${diffMinutes}分钟前`;
-                    const diffHours = Math.floor(diffMinutes / 60);
-                    if (diffHours < 24) return `${diffHours}小时前`;
-                    const diffDays = Math.floor(diffHours / 24);
-                    if (diffDays === 1) return '昨天';
-                    if (diffDays === 2) return '前天';
-                    const year = targetTime.getFullYear();
-                    const month = String(targetTime.getMonth() + 1).padStart(2, '0');
-                    const day = String(targetTime.getDate()).padStart(2, '0');
-                    if (year === now.getFullYear()) return `${month}-${day}`;
-                    return `${year}-${month}-${day}`;
-                },
-                resolveAvatar(avatar) {
-                    if (!avatar) return this.defaultAvatar;
-                    if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:') || avatar.startsWith('blob:')) return avatar;
-                    if (avatar.startsWith('/')) return avatar;
-                    return avatar;
-                },
-                onAvatarError(event) {
-                    event.target.src = this.defaultAvatar;
-                },
-                handleScroll() {
-                    const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 400;
-                    if (nearBottom && this.pageResult.hasNext && !this.loading) {
-                        this.loadMore();
-                    }
-                },
-                showToast(message, type) {
-                    if (this.toastTimer) clearTimeout(this.toastTimer);
-                    this.toastMessage = message;
-                    this.toastType = type || 'info';
-                    this.toastVisible = true;
-                    this.toastTimer = setTimeout(() => {
-                        this.toastVisible = false;
-                        this.toastMessage = '';
-                    }, 2500);
+            }catch(error){ this.errorMessage=error.response?.data?.message||'会话列表加载失败'; }
+            finally{ this.loadingConversations=false; }
+        },
+        async openTarget(targetId){
+            if(String(targetId)===String(this.currentUserId)){ this.errorMessage='不能给自己发私信'; return; }
+            const existing=this.conversations.find(x=>String(x.peerId)===String(targetId));
+            if(existing){ await this.openConversation(existing); return; }
+            this.activeConversation=null; this.activePeerId=targetId; this.messages=[];
+            try{
+                const response=await axios.get(`/api/user/info/${targetId}`);
+                const user=response.data.data||{};
+                this.activePeerName=user.username||user.displayName||user.account||`用户${targetId}`;
+            }catch(error){ this.activePeerName=`用户${targetId}`; this.errorMessage='用户信息加载失败，请确认用户存在'; }
+        },
+        async openConversation(item){
+            this.activeConversation=item; this.activePeerId=item.peerId; this.activePeerName=item.peerAccount;
+            this.loadingMessages=true; this.errorMessage='';
+            try{
+                const response=await axios.get(`/api/messages/conversations/${item.id}`,{params:{size:100}});
+                this.messages=(response.data.data||[]).slice().reverse();
+                await axios.put(`/api/messages/conversations/${item.id}/read`);
+                item.unreadCount=0;
+                window.dispatchEvent(new CustomEvent('message-unread-changed'));
+                this.scrollBottom();
+            }catch(error){ this.errorMessage=error.response?.data?.message||'聊天记录加载失败'; }
+            finally{ this.loadingMessages=false; }
+        },
+        async sendMessage(){
+            const content=this.draft.trim(); if(!content||!this.activePeerId||this.sending)return;
+            this.sending=true; this.errorMessage='';
+            const clientMessageId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():`${Date.now()}-${Math.random()}`;
+            try{
+                const response=await axios.post(`/api/messages/users/${this.activePeerId}`,{clientMessageId,type:'TEXT',content});
+                const saved=response.data.data; this.draft='';
+                if(this.activeConversation){ this.messages.push(saved); }
+                await this.loadConversations();
+                const item=this.conversations.find(x=>String(x.peerId)===String(this.activePeerId));
+                if(item){
+                    if(!this.activeConversation) await this.openConversation(item);
+                    else { this.activeConversation=item; this.scrollBottom(); }
                 }
+            }catch(error){ this.errorMessage=error.response?.data?.message||'发送失败，请稍后重试'; }
+            finally{ this.sending=false; }
+        },
+        async refreshActive(){
+            if(document.hidden)return;
+            await this.loadConversations();
+            if(this.activeConversation){
+                const oldLast=this.messages.length?this.messages[this.messages.length-1].id:0;
+                if((this.activeConversation.lastMessageId||0)>oldLast) await this.openConversation(this.activeConversation);
             }
-        });
-    </script>
+        },
+        scrollBottom(){ this.$nextTick(()=>{ const el=this.$refs.messages; if(el)el.scrollTop=el.scrollHeight; }); },
+        viewPeer(){ location.href=`profile.html?userId=${encodeURIComponent(this.activePeerId)}`; },
+        formatTime(value){ return value?String(value).replace('T',' ').slice(0,16):''; },
+        shortTime(value){ return value?String(value).replace('T',' ').slice(5,16):''; }
+    }
+});
+</script>
 </body>
-
 </html>

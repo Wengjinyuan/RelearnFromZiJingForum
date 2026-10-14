@@ -17,4 +17,6 @@ public interface MessageService {
     List<MessageVO> history(long userId, long conversationId, MessagePageDTO query);
     /** 当前用户打开会话后清自己的未读。 */
     void read(long userId, long conversationId);
+    /** 汇总当前用户所有私信会话的未读条数。 */
+    long unreadCount(long userId);
 }

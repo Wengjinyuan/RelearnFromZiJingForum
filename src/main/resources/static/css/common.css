@@ -373,7 +373,7 @@ a {
     stroke: currentColor;
     fill: none;
 }
-    //头像上传
+    /*//头像上传*/
     .avatar-upload-container {
         display: flex;
         align-items: center;

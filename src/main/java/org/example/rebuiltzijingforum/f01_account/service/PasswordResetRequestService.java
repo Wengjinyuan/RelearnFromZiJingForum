@@ -1,6 +1,7 @@
 package org.example.rebuiltzijingforum.f01_account.service;
 
 import org.example.rebuiltzijingforum.common.exception.BusinessException;
+import org.example.rebuiltzijingforum.common.security.Roles;
 import org.example.rebuiltzijingforum.f01_account.dto.CurrentUserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -63,6 +64,6 @@ public class PasswordResetRequestService {
     }
 
     private void requireAdmin(CurrentUserDTO actor) {
-        if (!"ADMIN".equals(actor.role())) throw new BusinessException("ADMIN_FORBIDDEN", "需要管理员权限", HttpStatus.FORBIDDEN);
+        if (!Roles.isAdmin(actor.role())) throw new BusinessException("ADMIN_FORBIDDEN", "需要管理员权限", HttpStatus.FORBIDDEN);
     }
 }

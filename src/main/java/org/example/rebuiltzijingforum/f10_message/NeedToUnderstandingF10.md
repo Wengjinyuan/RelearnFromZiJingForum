@@ -32,6 +32,8 @@ flowchart TD
 
 `GET /api/messages/stream` → `MessageController.stream` → `MessageSseHub.subscribe(userId)` 建立该用户的 `SseEmitter` 集合。发送提交后 `deliver(recipient,vo)` 只推在线连接；断线、服务器重启或用户离线时不会保留 SSE 事件，客户端需通过会话/历史接口补拉。SSE 是体验加速器，持久化私信才是事实来源。当前内存 Hub 只覆盖本进程，多实例跨节点实时推送还缺共享广播或粘性路由。
 
+浏览器入口是 `static/user/message.html`。个人主页的“私信”跳转时携带 `targetId`；页面先查已有会话，没有会话也允许直接发第一条。发送端每次生成新的 `clientMessageId`，成功后重拉会话；打开会话会加载历史并调用已读接口。浏览器原生 `EventSource` 不能像 Axios 一样方便地附加 Bearer 请求头，所以当前页面采用 5 秒轮询补拉，没有直接使用后端 SSE。这能工作但有延迟和额外查询；后续可改 HttpOnly Cookie 鉴权的 SSE、fetch 流或 WebSocket，并仍以数据库历史补偿断线消息。
+
 ## 4. 方法地图
 
 | 方法 | 作用 |

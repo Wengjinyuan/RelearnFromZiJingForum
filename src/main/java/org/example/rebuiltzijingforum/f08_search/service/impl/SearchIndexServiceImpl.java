@@ -100,17 +100,26 @@ public class SearchIndexServiceImpl implements SearchIndexService {
     /** multi_match 区分标题/摘要/标签权重；只在别名已创建后查询。 */
     @Override
     public PageResponse<PostSearchVO> posts(SearchDTO query) {
+        Map<String, Object> multiMatch = Map.of("multi_match", Map.of(
+                "query", query.keyword(), "fields", List.of("title^3", "summary", "tags^2")));
+        Object searchQuery = query.category() == null || query.category().isBlank() || "all".equalsIgnoreCase(query.category())
+                ? multiMatch
+                : Map.of("bool", Map.of("must", List.of(multiMatch),
+                        "filter", List.of(Map.of("term", Map.of("category", query.category())))));
         JsonNode result = es.request("POST", "/" + POSTS + "/_search", Map.of(
                 "from", (query.page() - 1) * query.size(), "size", query.size(),
                 "track_total_hits", true,
-                "query", Map.of("multi_match", Map.of("query", query.keyword(), "fields", List.of("title^3", "summary", "tags^2"))),
+                "query", searchQuery,
                 "sort", "latest".equals(query.sort()) ? List.of(Map.of("createdAt", "desc"), Map.of("id", "desc"))
                         : List.of(Map.of("_score", "desc"), Map.of("createdAt", "desc"), Map.of("id", "desc"))));
         List<PostSearchVO> items = new ArrayList<>();
         for (JsonNode hit : result.path("hits").path("hits")) {
             JsonNode row = hit.path("_source");
             items.add(new PostSearchVO(row.path("id").asLong(), row.path("title").asText(), row.path("summary").asText(),
-                    row.path("authorId").asLong(), LocalDateTime.parse(row.path("createdAt").asText()), null, null));
+                    row.path("authorId").asLong(), row.path("authorName").asText("用户"), row.path("category").asText(),
+                    row.path("viewCount").asInt(), row.path("likeCount").asInt(), row.path("commentCount").asInt(),
+                    row.path("favoriteCount").asInt(), row.path("essence").asBoolean(),
+                    LocalDateTime.parse(row.path("createdAt").asText()), null, null));
         }
         return new PageResponse<>(items, result.path("hits").path("total").path("value").asLong(), query.page(), query.size());
     }
@@ -142,12 +151,22 @@ public class SearchIndexServiceImpl implements SearchIndexService {
 
     /** standard 是 ES 内置分析器；生产中文分词可替换为已安装的 IK 等分析器。 */
     private Map<String, Object> postMapping() {
-        return Map.of("mappings", Map.of("properties", Map.of(
-                "id", Map.of("type", "long"), "title", Map.of("type", "text", "analyzer", "standard"),
-                "summary", Map.of("type", "text", "analyzer", "standard"),
-                "tags", Map.of("type", "text", "analyzer", "standard"),
-                "authorId", Map.of("type", "long"), "createdAt", Map.of("type", "date"),
-                "sourceUpdatedAt", Map.of("type", "date"))));
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("id", Map.of("type", "long"));
+        fields.put("title", Map.of("type", "text", "analyzer", "standard"));
+        fields.put("summary", Map.of("type", "text", "analyzer", "standard"));
+        fields.put("tags", Map.of("type", "text", "analyzer", "standard"));
+        fields.put("authorId", Map.of("type", "long"));
+        fields.put("authorName", Map.of("type", "keyword"));
+        fields.put("category", Map.of("type", "keyword"));
+        fields.put("viewCount", Map.of("type", "integer"));
+        fields.put("likeCount", Map.of("type", "integer"));
+        fields.put("commentCount", Map.of("type", "integer"));
+        fields.put("favoriteCount", Map.of("type", "integer"));
+        fields.put("essence", Map.of("type", "boolean"));
+        fields.put("createdAt", Map.of("type", "date"));
+        fields.put("sourceUpdatedAt", Map.of("type", "date"));
+        return Map.of("mappings", Map.of("properties", fields));
     }
 
     /** 用户 mapping 不包含邮箱、手机号、密码；公开搜索只索引账号、昵称和签名。 */

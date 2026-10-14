@@ -15,12 +15,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** F08 业务层：校验输入，优先可选 ES，失败回退参数化 MySQL，再安全组装高亮 VO。 */
 @Service
 public class SearchServiceImpl implements SearchService {
+    private static final Set<String> CATEGORIES = Set.of(
+            "校园资讯", "学习交流", "社团活动", "二手交易", "生活服务", "校园树洞", "公告");
     private static final Logger log = LoggerFactory.getLogger(SearchServiceImpl.class);
     private final SearchMapper mapper;
     private final ObjectProvider<SearchIndexService> index;
@@ -34,16 +38,18 @@ public class SearchServiceImpl implements SearchService {
     public PageResponse<PostSearchVO> posts(SearchDTO query) {
         check(query);
         PageResponse<PostSearchVO> found = null;
-        SearchIndexService es = index.getIfAvailable();
+        SearchIndexService es = List.of("relevance", "latest").contains(query.sort()) ? index.getIfAvailable() : null;
         if (es != null) try { found = es.posts(query); }
         catch (RuntimeException unavailable) { log.warn("ES 帖子搜索不可用，回退 MySQL LIKE", unavailable); }
         if (found == null) {
             String pattern = pattern(query.keyword());
-            found = new PageResponse<>(mapper.posts(pattern, query.sort(), query.size(), (query.page()-1)*query.size()),
-                    mapper.countPosts(pattern), query.page(), query.size());
+            String category = normalizedCategory(query.category());
+            found = new PageResponse<>(mapper.posts(pattern, category, query.sort(), query.size(), (query.page()-1)*query.size()),
+                    mapper.countPosts(pattern, category), query.page(), query.size());
         }
         return new PageResponse<>(found.items().stream().map(row -> new PostSearchVO(row.id(), row.title(), row.summary(),
-                row.authorId(), row.createdAt(), SearchHighlighter.highlight(row.title(), query.keyword()),
+                row.authorId(), row.authorName(), row.category(), row.viewCount(), row.likeCount(), row.commentCount(),
+                row.favoriteCount(), row.essence(), row.createdAt(), SearchHighlighter.highlight(row.title(), query.keyword()),
                 SearchHighlighter.highlight(row.summary(), query.keyword()))).toList(), found.total(), found.page(), found.size());
     }
 
@@ -75,12 +81,21 @@ public class SearchServiceImpl implements SearchService {
             throw new BusinessException("PAGE_INVALID", "分页参数错误", HttpStatus.BAD_REQUEST);
         if ((long) (page - 1) * size >= 10_000)
             throw new BusinessException("DEEP_PAGE_INVALID", "暂不支持超过10000条的深分页", HttpStatus.BAD_REQUEST);
-        if (query.sort() == null || !(query.sort().equals("relevance") || query.sort().equals("latest")))
-            throw new BusinessException("SORT_INVALID", "排序仅支持 relevance/latest", HttpStatus.BAD_REQUEST);
+        if (query.sort() == null || !Set.of("relevance", "latest", "most_viewed", "most_liked").contains(query.sort()))
+            throw new BusinessException("SORT_INVALID", "排序仅支持 relevance/latest/most_viewed/most_liked", HttpStatus.BAD_REQUEST);
+        normalizedCategory(query.category());
     }
 
     /** 把 !、%、_ 转义，避免用户输入 % 时误匹配全站；真正值仍通过 JDBC 的 ? 绑定。 */
     private String pattern(String keyword) {
         return "%" + keyword.trim().toLowerCase(Locale.ROOT).replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
+    }
+
+    private String normalizedCategory(String category) {
+        if (category == null || category.isBlank() || "all".equalsIgnoreCase(category)) return null;
+        String value = category.trim();
+        if (!CATEGORIES.contains(value))
+            throw new BusinessException("CATEGORY_INVALID", "搜索分类不合法", HttpStatus.BAD_REQUEST);
+        return value;
     }
 }

@@ -51,14 +51,30 @@ public class FollowMapper {
 
     /** JOIN 右边的用户表，按当前用户关注的人返回账号列表。 */
     public List<FollowUserVO> following(long userId, int size, int offset) {
-        return jdbc.query("SELECT u.id,u.account FROM follow_relation f JOIN user_account u ON u.id=f.followed_id WHERE f.follower_id=? ORDER BY f.created_at DESC,u.id DESC LIMIT ? OFFSET ?",
-                (rs, n) -> new FollowUserVO(rs.getLong(1), rs.getString(2)), userId, size, offset);
+        return jdbc.query("""
+                SELECT u.id,u.account,p.display_name,p.avatar_url,p.signature,p.major,
+                       (SELECT COUNT(*) FROM follow_relation fc WHERE fc.followed_id=u.id) AS follower_count
+                FROM follow_relation f
+                JOIN user_account u ON u.id=f.followed_id AND u.status<>'BANNED'
+                LEFT JOIN user_profile p ON p.user_id=u.id
+                WHERE f.follower_id=?
+                ORDER BY f.created_at DESC,u.id DESC LIMIT ? OFFSET ?
+                """, (rs, n) -> new FollowUserVO(rs.getLong(1), rs.getString(2), rs.getString(3),
+                rs.getString(4), rs.getString(5), rs.getString(6), rs.getLong(7)), userId, size, offset);
     }
 
     /** JOIN 左边的用户表，按被关注人返回粉丝列表。 */
     public List<FollowUserVO> followers(long userId, int size, int offset) {
-        return jdbc.query("SELECT u.id,u.account FROM follow_relation f JOIN user_account u ON u.id=f.follower_id WHERE f.followed_id=? ORDER BY f.created_at DESC,u.id DESC LIMIT ? OFFSET ?",
-                (rs, n) -> new FollowUserVO(rs.getLong(1), rs.getString(2)), userId, size, offset);
+        return jdbc.query("""
+                SELECT u.id,u.account,p.display_name,p.avatar_url,p.signature,p.major,
+                       (SELECT COUNT(*) FROM follow_relation fc WHERE fc.followed_id=u.id) AS follower_count
+                FROM follow_relation f
+                JOIN user_account u ON u.id=f.follower_id AND u.status<>'BANNED'
+                LEFT JOIN user_profile p ON p.user_id=u.id
+                WHERE f.followed_id=?
+                ORDER BY f.created_at DESC,u.id DESC LIMIT ? OFFSET ?
+                """, (rs, n) -> new FollowUserVO(rs.getLong(1), rs.getString(2), rs.getString(3),
+                rs.getString(4), rs.getString(5), rs.getString(6), rs.getLong(7)), userId, size, offset);
     }
 
     /** 拉模式 Feed：先用 f.follower_id 找关注关系，再用 p.author_id 找这些作者发布的帖子。 */

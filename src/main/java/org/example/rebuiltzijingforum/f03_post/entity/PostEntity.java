@@ -28,5 +28,6 @@ public class PostEntity {
     private Boolean isEssence;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime lastReplyAt;
     private LocalDateTime deletedAt;
 }

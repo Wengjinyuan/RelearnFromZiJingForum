@@ -21,9 +21,11 @@ mvn spring-boot:run
 
 原项目的 `frontend/html` 页面已复制到 `src/main/resources/static`，由 Spring Boot 直接提供。启动后打开 `http://localhost/`；若使用 `--server.port=18080`，改为 `http://localhost:18080/`。不需要另起 Nginx。前端 `js/axios-config.js` 把原页面的旧接口路径与响应格式转换为本工程的 `/api/...` 接口。
 
-默认仍使用文件型 H2：`./data/rebuilt-zijing-forum`。第一次启动会补充三个演示账号、四篇帖子、一条评论、一条关注关系和一条通知；后续启动按账号和帖子标题检查，不会重复生成，也不会清空已有练习数据。演示账号为 `demo_alice`、`demo_bob`、`demo_admin`，密码均为 `Demo12345`。管理员账号只用于本地练习。可通过 `forum.demo-data.enabled=false` 关闭自动补充；`mysql` profile 已默认关闭它。
+默认仍使用文件型 H2：`./data/rebuilt-zijing-forum`。第一次启动会补充四个演示账号、四篇帖子、一条评论、一条关注关系和一条通知；后续启动按账号和帖子标题检查，不会重复生成，也不会清空已有练习数据。演示账号为 `demo_alice`、`demo_bob`、`demo_admin`、`demo_super_admin`，密码均为 `Demo12345`。只有 `demo_super_admin` 能授予或撤销管理员；普通管理员负责内容和用户治理。演示管理账号只用于本地练习。可通过 `forum.demo-data.enabled=false` 关闭自动补充；`mysql` profile 已默认关闭它。
 
 建议先打开首页查看帖子，再用 `demo_alice` 登录测试发帖、评论、关注。原项目部分页面含有与当前后端尚不完全对应的功能，例如富文本图片上传；这些操作仍需后续实现相应的后端接口。
+
+AI 搜索采用 DeepSeek 的 OpenAI 兼容接口，默认关闭且不会把密钥写进仓库。启用前设置环境变量 `FORUM_AI_ENABLED=true`、`FORUM_AI_API_KEY=你的密钥`；可选配置 `FORUM_AI_URL` 与 `FORUM_AI_MODEL`。它先把自然语言问题改写为关键词/分类，再检索站内帖子，最后只基于检索结果生成带帖子来源的回答。原项目仅在测试类直接调用过 `DeepSeekChatModel`，没有可用的论坛 AI 搜索业务链，因此这里实现的是新的检索增强链路，不冒充原项目已有功能。
 
 ## 包与功能一一对应
 
@@ -84,4 +86,4 @@ feature/
 
 本地 `mvn test` 使用 H2；MySQL profile 使用独立的 `schema-mysql.sql`，但本轮尚未连接真实 MySQL 做运行验证。
 
-F11 管理端需要先有 `ADMIN` 账号。仅在**自己的练习数据库**里，先通过注册接口创建账号，再用数据库工具执行 `UPDATE user_account SET role='ADMIN', token_version=token_version+1 WHERE account='你的练习账号';`，然后重新登录取得带管理员角色的新 Token。不要在公开部署环境开放这样的手工提权流程。
+F11 管理端需要 `ADMIN` 或 `SUPER_ADMIN`。默认 H2 的 `demo_super_admin` 已可管理角色；MySQL 首次部署需要通过受控初始化流程建立唯一超级管理员，不能向公网开放自助提权接口。角色变化会递增 `token_version`，用户必须重新登录。

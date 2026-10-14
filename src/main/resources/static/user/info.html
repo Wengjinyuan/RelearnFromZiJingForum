@@ -45,7 +45,7 @@
         </div>
         <div class="actions">
             <button class="btn" @click="goProfile">个人主页</button>
-            <button class="btn btn-primary" @click="editProfile">修改</button>
+            <button v-if="isOwnProfile" class="btn btn-primary" @click="editProfile">修改</button>
         </div>
     </div>
 </div>
@@ -56,9 +56,13 @@
         el: '#app',
         data: {
             user: {},
+            currentUserId: null,
             defaultAvatar: '../img/头像示例.jpg'
         },
         computed: {
+            isOwnProfile() {
+                return String(this.currentUserId || '') === String(this.user.id || '');
+            },
             fields() {
                 return [
                     { key: 'id', label: 'id', value: this.user.id },
@@ -90,10 +94,18 @@
                 window.location.href = '../login.html';
                 return;
             }
+            if (localStorage.getItem('token')) {
+                axios.get('/api/user/current').then(response => {
+                    this.currentUserId = response.data.data?.id || null;
+                }).catch(() => { this.currentUserId = null; });
+            }
             axios.get(`/api/user/info/${userId}`).then(response => {
                 if (response.data.code === 1) {
                     this.user = response.data.data || {};
-                    localStorage.setItem('userInfo', JSON.stringify(this.user));
+                    localStorage.setItem(`userInfo_${this.user.id}`, JSON.stringify(this.user));
+                    if (String(this.currentUserId || '') === String(this.user.id || '')) {
+                        localStorage.setItem('userInfo', JSON.stringify(this.user));
+                    }
                 }
             });
         },
@@ -104,7 +116,10 @@
                 return avatar;
             },
             handleAvatarError(event) { event.target.src = this.defaultAvatar; },
-            editProfile() { window.location.href = `edit-profile.html?userId=${this.user.id}`; },
+            editProfile() {
+                if (!this.isOwnProfile) return;
+                window.location.href = `edit-profile.html?userId=${this.currentUserId}`;
+            },
             goProfile() { window.location.href = `profile.html?userId=${this.user.id}`; }
         }
     });

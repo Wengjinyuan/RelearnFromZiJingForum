@@ -30,8 +30,6 @@ public class AdminMapper {
     /** 与 users 相同的过滤条件，供前端计算总页数。 */
     public long userCount(String keyword) { return db.queryForObject("SELECT COUNT(*) FROM user_account WHERE LOWER(account) LIKE ? ESCAPE '!'", Long.class, keyword); }
 
-    public long adminCount() { return db.queryForObject("SELECT COUNT(*) FROM user_account WHERE role='ADMIN'", Long.class); }
-
     public int setUserRole(long id, String oldRole, String role, LocalDateTime now) {
         return db.update("UPDATE user_account SET role=?,token_version=token_version+1,updated_at=? WHERE id=? AND role=?",
                 role, now, id, oldRole);
@@ -39,7 +37,7 @@ public class AdminMapper {
 
     /** 修改单个用户状态；封禁时 token_version+1 让旧 JWT 立即作废。 */
     public int setUserStatus(long id, String oldStatus, String status, boolean revokeToken, LocalDateTime now) {
-        return db.update("UPDATE user_account SET status=?, token_version=token_version+?, updated_at=? WHERE id=? AND status=? AND role<>'ADMIN'",
+        return db.update("UPDATE user_account SET status=?, token_version=token_version+?, updated_at=? WHERE id=? AND status=? AND role NOT IN ('ADMIN','SUPER_ADMIN')",
                 status, revokeToken ? 1 : 0, now, id, oldStatus);
     }
 
@@ -51,14 +49,25 @@ public class AdminMapper {
     }
 
     /** 帖子管理列表：可按状态过滤，包含待审核/已删除记录。 */
-    public List<PostRow> posts(String status, int size, int offset) {
-        return db.query("SELECT id,author_id,title,status,is_top,is_essence FROM post WHERE (?='' OR status=?) ORDER BY id DESC LIMIT ? OFFSET ?",
+    public List<PostRow> posts(String status, String keyword, int size, int offset) {
+        return db.query("""
+                SELECT id,author_id,title,status,is_top,is_essence FROM post
+                WHERE (?='' OR status=?)
+                  AND (LOWER(title) LIKE ? ESCAPE '!' OR LOWER(content) LIKE ? ESCAPE '!')
+                ORDER BY id DESC LIMIT ? OFFSET ?
+                """,
                 (rs, i) -> new PostRow(rs.getLong("id"), rs.getLong("author_id"), rs.getString("title"), rs.getString("status"),
-                        rs.getBoolean("is_top"), rs.getBoolean("is_essence")), status, status, size, offset);
+                        rs.getBoolean("is_top"), rs.getBoolean("is_essence")), status, status, keyword, keyword, size, offset);
     }
 
     /** 帖子列表总数；与列表保持相同的 WHERE。 */
-    public long postCount(String status) { return db.queryForObject("SELECT COUNT(*) FROM post WHERE (?='' OR status=?)", Long.class, status, status); }
+    public long postCount(String status, String keyword) {
+        return db.queryForObject("""
+                SELECT COUNT(*) FROM post
+                WHERE (?='' OR status=?)
+                  AND (LOWER(title) LIKE ? ESCAPE '!' OR LOWER(content) LIKE ? ESCAPE '!')
+                """, Long.class, status, status, keyword, keyword);
+    }
 
     /** 审核/拒绝/删除：WHERE 只修改目标帖；删除同时写 deleted_at。 */
     public int setPostStatus(long id, String oldStatus, String status, LocalDateTime now) {

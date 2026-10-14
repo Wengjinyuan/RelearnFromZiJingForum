@@ -1,6 +1,6 @@
 # F11 从代码学治理：权限、状态机、审计和禁言到期
 
-先打开 `AdminUserController/AdminPostController`，再顺着 `AdminUserServiceImpl/AdminPostServiceImpl/PunishmentServiceImpl`，读 `AdminChecks` 和三个 Mapper。F01 拦截器只证明“请求是谁”，本包的 `AdminChecks.admin` 再判断是否 `ADMIN`；普通用户持有效 JWT 仍不能管理。
+先打开 `AdminUserController/AdminPostController`，再顺着 `AdminUserServiceImpl/AdminPostServiceImpl/PunishmentServiceImpl`，读 `AdminChecks` 和三个 Mapper。F01 拦截器只证明“请求是谁”；`AdminChecks.admin` 允许 `ADMIN/SUPER_ADMIN` 做日常治理，`AdminChecks.superAdmin` 只允许超级管理员授予或撤销管理员。
 
 ## 1. 当前状态在主表，历史在附表
 
@@ -25,6 +25,8 @@ flowchart TD
 ## 2. 用户治理的请求链
 
 `GET /api/admin/users` → `AdminUserServiceImpl.users` → `AdminChecks.admin/page` → 关键词转义后 `AdminMapper.users/userCount` → `toVo`。`PUT /api/admin/users/{id}/mute|ban|unban|unmute` → Controller 将固定动作字符串传给 `changeUser` → 管理员检查、理由检查 → 禁止处罚自己/管理员 → `AdminMapper.user` 查旧状态 → switch 求新状态 → 验禁言到期时间与允许的旧状态 → `AdminMapper.setUserStatus(id,oldStatus,newStatus,...)`；更新不到 1 行报 409，表示并发状态变化 → `PunishmentMapper.insert` → `AuditLogMapper.insert` → 可选 F08 `userChanged` → 重查用户并 `toVo`。状态、处罚、审计在同一数据库事务中。`BAN` 还由 SQL 增 `token_version`，使已有 JWT 失效；具体鉴权在 F01。`GET /{id}/punishments` 则先验管理员与目标，再 `PunishmentMapper.list`。
+
+角色变更单独走 `PUT /api/admin/users/{id}/role`：先执行 `AdminChecks.superAdmin`，目标角色只能是 `USER/ADMIN`，而且不能修改 `SUPER_ADMIN` 自身。普通管理员即使手工绕过前端调用接口也会得到 403；超级管理员页面才渲染角色下拉框。角色写入同时递增 `token_version`，被调整用户的旧 JWT 立即失效。默认 H2 演示账号 `demo_super_admin` 只用于本地学习；生产环境应通过受控初始化创建超级管理员，而不是开放注册提权。
 
 ## 3. 帖子治理的请求链
 

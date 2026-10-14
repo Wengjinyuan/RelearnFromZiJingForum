@@ -26,7 +26,7 @@
     <div class="user-item" v-for="user in users" :key="user.id" @click="viewUser(user.id)">
         <img :src="resolveAvatarUrl(user.avatar)" @error="handleAvatarError" alt="头像">
         <div>
-            <div class="name">{{ user.username }}</div>
+            <div class="name">{{ user.username || user.displayName || user.account }}</div>
             <div class="meta">{{ user.major || '未填写专业' }} · 粉丝 {{ user.followerCount || 0 }}</div>
         </div>
     </div>
@@ -43,10 +43,16 @@
             loadUsers() {
                 const userId = new URLSearchParams(window.location.search).get('userId') || localStorage.getItem('userId');
                 this.loading = true;
-                axios.get(`/api/user/${userId}/following`, { params: { page: 1, size: 1000 } })
+                if (!userId) { this.loading = false; return; }
+                axios.get(`/api/user/${userId}/following`, { params: { page: 1, size: 100 } })
                     .then(response => {
                         this.users = response.data.records || [];
                         this.total = Number(response.data.total) || this.users.length;
+                    })
+                    .catch(error => {
+                        console.error('加载关注列表失败', error);
+                        this.users = [];
+                        this.total = 0;
                     })
                     .finally(() => { this.loading = false; });
             },

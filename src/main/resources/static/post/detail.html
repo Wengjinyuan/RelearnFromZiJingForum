@@ -1375,7 +1375,7 @@
                             </div>
                             <button class="follow-btn" :class="{following: authorFollowed}"
                                 @click="toggleAuthorFollow">{{ authorFollowed ? '已关注' : '＋ 关注' }}</button>
-                            <button class="massage-btn" @click="showToast('私信作者')">发私信</button>
+                            <button class="massage-btn" @click="messageAuthor">发私信</button>
                         </div>
                         <div class="card">
                             <h4 style="margin:0 0 10px 0">热门话题</h4>
@@ -1779,6 +1779,20 @@
                         if (this.postDetail.author) this.postDetail.author.followerCount = this.postAuthor.followerCount;
                         this.showToast(this.authorFollowed ? '已关注' : '已取消关注');
                     }).catch(() => this.showToast('关注操作失败'));
+                },
+                messageAuthor() {
+                    const targetId = this.postAuthor.id || this.postDetail.userId || this.authorId;
+                    if (!targetId) { this.showToast('缺少作者信息，暂时无法发私信'); return; }
+                    if (!localStorage.getItem('token')) {
+                        const redirect = `../user/message.html?targetId=${encodeURIComponent(targetId)}`;
+                        window.location.href = `../login.html?redirect=${encodeURIComponent(redirect)}`;
+                        return;
+                    }
+                    if (String(targetId) === String(this.currentUserId)) {
+                        this.showToast('不能给自己发私信');
+                        return;
+                    }
+                    window.location.href = `../user/message.html?targetId=${encodeURIComponent(targetId)}`;
                 },
                 goToProfile(id) { window.open(`../user/profile.html?userId=${id}`, '_blank'); },
 

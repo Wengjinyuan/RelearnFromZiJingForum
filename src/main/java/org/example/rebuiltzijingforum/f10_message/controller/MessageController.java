@@ -38,6 +38,13 @@ public class MessageController {
         return ApiResponse.success(service.conversations(user.userId()));
     }
 
+    /** 顶部消息红点只统计私信未读，避免把点赞、评论通知误算成私信。 */
+    @GetMapping("/unread-count")
+    public ApiResponse<MessageUnreadCount> unreadCount(
+            @RequestAttribute(AuthenticationInterceptor.CURRENT_USER) CurrentUserDTO user) {
+        return ApiResponse.success(new MessageUnreadCount(service.unreadCount(user.userId())));
+    }
+
     /** 前端上滑加载旧消息 → Service.requireMember → Mapper.history。 */
     @GetMapping("/conversations/{id}")
     public ApiResponse<List<MessageVO>> history(@PathVariable long id,
@@ -58,5 +65,7 @@ public class MessageController {
     public SseEmitter stream(@RequestAttribute(AuthenticationInterceptor.CURRENT_USER) CurrentUserDTO user) {
         return live.subscribe(user.userId());
     }
+
+    public record MessageUnreadCount(long count) {}
 
 }

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 
 <head>
@@ -969,7 +969,7 @@
                             {{ isFollowed ? '已关注' : '+ 关注' }}
                         </button>
                         <button class="btn-profile" @click="privateChat">✉ 私信</button>
-                        <button class="btn-profile" @click="editProfile">✎ 编辑设置</button>
+                        <button v-if="isOwnProfile" class="btn-profile" @click="editProfile">✎ 编辑设置</button>
                     </div>
                 </div>
 
@@ -1188,21 +1188,13 @@
                 allLoaded: false,
 
                 // 侧边栏数据
-                goodArticles: [
-                    { id: 1, title: '考研倒计时30天', likes: 54 },
-                    { id: 2, title: '校园摄影攻略', likes: 128 },
-                    { id: 3, title: '实验室日常vlog', likes: 76 }
-                ],
+                goodArticles: [],
                 suggestUsers: [
                     { id: 101, name: '摄影小哥', relation: '互关' },
                     { id: 102, name: '社团小助手', relation: '+ 关注' },
                     { id: 103, name: '紫荆菌', relation: '粉丝 2w' }
                 ],
-                hotTopics: [
-                    { name: '春季社团招新', hot: '182万' },
-                    { name: '考研经验', hot: '121万' },
-                    { name: '二手电脑推荐', hot: '98万' }
-                ],
+                hotTopics: [],
                 //所有帖子
                 allPosts: [],
                 currentPage: 1,
@@ -1285,7 +1277,9 @@
                                 this.syncFollowState();
                                 this.syncCategoryCounts();
                                 this.refreshPosts();
-                                localStorage.setItem('userInfo', JSON.stringify(result.data));
+                                this.loadSidebarContent();
+                                localStorage.setItem(`userInfo_${result.data.id}`, JSON.stringify(result.data));
+                                if (this.isOwnProfile) localStorage.setItem('userInfo', JSON.stringify(result.data));
                             } else {
                                 console.error('获取失败:', result.msg);
                             }
@@ -1330,6 +1324,28 @@
                         if (category.name === 'essence') return { ...category, count: essenceCount };
                         return category;
                     });
+                },
+                loadSidebarContent() {
+                    const userId = this.userInfo.id;
+                    if (userId) {
+                        axios.get(`/api/user/${userId}/posts`, { params: { page: 1, size: 3, sort: 'hot' } })
+                            .then(response => {
+                                this.goodArticles = (response.data.records || []).map(post => ({
+                                    id: post.id,
+                                    title: post.title || '未命名帖子',
+                                    likes: Number(post.likeCount) || 0
+                                }));
+                            })
+                            .catch(error => console.error('加载 TA 的好文失败:', error));
+                    }
+                    axios.get('/api/home/getHotTags')
+                        .then(response => {
+                            this.hotTopics = (response.data.data || []).slice(0, 5).map(topic => ({
+                                name: topic.name || topic.tagName,
+                                hot: Number(topic.hotScore ?? topic.count ?? topic.used) || 0
+                            }));
+                        })
+                        .catch(error => console.error('加载热门话题失败:', error));
                 },
                 resolveAvatarUrl(avatar) {
                     if (!avatar) {
@@ -1616,7 +1632,7 @@
                 },
 
                 viewArticle(id) {
-                    alert(`查看文章 (ID: ${id})`);
+                    window.location.href = `../post/detail.html?postId=${encodeURIComponent(id)}`;
                 },
 
                 showComments(post) {
@@ -1649,7 +1665,11 @@
                 },
 
                 privateChat() {
-                    alert('打开私信窗口');
+                    if (this.isOwnProfile) {
+                        window.location.href = 'message.html';
+                        return;
+                    }
+                    window.location.href = `message.html?targetId=${encodeURIComponent(this.userInfo.id)}`;
                 },
 
                 followSuggestUser(id) {
@@ -1673,8 +1693,11 @@
                 },
 
                 editProfile() {
-                    // alert('编辑个人信息'); // 原来的提示保留注释，不删除
-                    const userId = this.userInfo.id || localStorage.getItem('userId');
+                    if (!this.isOwnProfile) {
+                        alert('只能修改自己的资料');
+                        return;
+                    }
+                    const userId = this.currentUserId || localStorage.getItem('userId');
                     if (!userId || userId === 'null') {
                         window.location.href = '../login.html';
                         return;
@@ -1705,7 +1728,7 @@
                 },
 
                 searchTopic(name) {
-                    alert(`搜索话题: ${name}`);
+                    window.location.href = `../post/search.html?q=${encodeURIComponent(name)}`;
                 }
             }
         });

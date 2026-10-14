@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS post (
   view_count INT NOT NULL DEFAULT 0, like_count INT NOT NULL DEFAULT 0,
   comment_count INT NOT NULL DEFAULT 0, favorite_count INT NOT NULL DEFAULT 0,
   is_top BOOLEAN NOT NULL DEFAULT FALSE, is_essence BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL, deleted_at DATETIME,
+  created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL, last_reply_at DATETIME, deleted_at DATETIME,
   KEY idx_post_status_category_created(status,category,created_at),
   KEY idx_post_author_created(author_id,created_at)
 );

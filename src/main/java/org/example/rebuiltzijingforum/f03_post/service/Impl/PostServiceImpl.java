@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.example.rebuiltzijingforum.common.api.PageResponse;
 import org.example.rebuiltzijingforum.common.exception.BusinessException;
 import org.example.rebuiltzijingforum.common.security.PostingPermission;
+import org.example.rebuiltzijingforum.common.security.Roles;
 import org.example.rebuiltzijingforum.f01_account.dto.CurrentUserDTO;
 import org.example.rebuiltzijingforum.f01_account.entity.UserAccountEntity;
 import org.example.rebuiltzijingforum.f01_account.mapper.UserAccountMapper;
@@ -62,7 +63,6 @@ public class PostServiceImpl implements PostService {
     private static final String DELETED = "DELETED";
     private static final Set<String> CATEGORIES = Set.of(
             "校园资讯", "学习交流", "社团活动", "二手交易", "生活服务", "校园树洞", "公告");
-    private static final String ADMIN = "ADMIN";
     private final PostMapper postMapper;
     private final TagMapper tagMapper;
     private final PostTagMapper postTagMapper;
@@ -362,7 +362,8 @@ public class PostServiceImpl implements PostService {
             // 最新发布：先比较创建时间；同一时刻创建时，id 大的在前。
             case "latest" -> wrapper.orderByDesc(PostEntity::getCreatedAt).orderByDesc(PostEntity::getId);
             // 最近活跃：目前用帖子更新时间代表活跃时间；编辑帖子会改变此顺序。
-            case "active" -> wrapper.orderByDesc(PostEntity::getUpdatedAt).orderByDesc(PostEntity::getId);
+            case "active" -> wrapper.orderByDesc(PostEntity::getLastReplyAt)
+                    .orderByDesc(PostEntity::getCreatedAt).orderByDesc(PostEntity::getId);
             // 热门：依次比较点赞、评论、浏览；前一个字段相同时才比较下一个。
             case "hot" -> wrapper.orderByDesc(PostEntity::getLikeCount)
                     .orderByDesc(PostEntity::getCommentCount)
@@ -606,7 +607,7 @@ public class PostServiceImpl implements PostService {
     }
 
     private boolean isAdmin(CurrentUserDTO currentUser) {
-        return ADMIN.equalsIgnoreCase(currentUser.role());
+        return Roles.isAdmin(currentUser.role());
     }
 
     private List<PostSummaryVO> toSummaries(List<PostEntity> posts) {

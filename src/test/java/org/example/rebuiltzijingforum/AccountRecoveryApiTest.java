@@ -31,7 +31,7 @@ class AccountRecoveryApiTest {
     void adminApprovesResetAndChangesRoleWhileOldTokenExpires() throws Exception {
         long admin = register("recovery_admin", "recovery-admin@example.test");
         long member = register("recovery_user", "recovery-user@example.test");
-        db.update("UPDATE user_account SET role='ADMIN' WHERE id=?", admin);
+        db.update("UPDATE user_account SET role='SUPER_ADMIN' WHERE id=?", admin);
         String adminToken = login("recovery_admin", "Password123");
         String oldMemberToken = login("recovery-user@example.test", "Password123");
 
@@ -62,6 +62,11 @@ class AccountRecoveryApiTest {
         mvc.perform(put("/api/admin/users/{id}/role", admin).header("Authorization", bearer(adminToken))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"USER\"}"))
                 .andExpect(status().isBadRequest());
+
+        String promotedAdminToken = login("recovery_user", "123456");
+        mvc.perform(put("/api/admin/users/{id}/role", admin).header("Authorization", bearer(promotedAdminToken))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"USER\"}"))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("SUPER_ADMIN_FORBIDDEN"));
     }
 
     @Test

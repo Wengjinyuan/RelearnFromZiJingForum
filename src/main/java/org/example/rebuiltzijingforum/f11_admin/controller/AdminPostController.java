@@ -21,8 +21,10 @@ public class AdminPostController {
     /** 待审/已发布/已驳回列表 GET → Service.posts → AdminMapper 查询。 */
     @GetMapping("/posts")
     public ApiResponse<PageResponse<AdminPostVO>> posts(@RequestAttribute(AuthenticationInterceptor.CURRENT_USER) CurrentUserDTO actor,
-            @RequestParam(required = false) String status, @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) { return ApiResponse.success(service.posts(actor, status, page, size)); }
+            @RequestParam(required = false) String status, @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.success(service.posts(actor, status, keyword, page, size));
+    }
 
     /** 审核通过 PUT → 只允许 PENDING → PUBLISHED，状态与审计同事务。 */
     @PutMapping("/posts/{id}/approve")

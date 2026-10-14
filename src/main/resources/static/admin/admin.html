@@ -596,10 +596,11 @@
                         </span>
                         </td>
                         <td>
-                            <select v-model="user.role" @change="changeUserRole(user)" :disabled="userActionLoading === user.id">
+                            <select v-if="currentRole === 3 && user.role !== 'SUPER_ADMIN'" v-model="user.role" @change="changeUserRole(user)" :disabled="userActionLoading === user.id">
                                 <option value="USER">普通用户</option>
                                 <option value="ADMIN">管理员</option>
                             </select>
+                            <span v-else>{{ user.role === 'SUPER_ADMIN' ? '超级管理员' : (user.role === 'ADMIN' ? '管理员' : '普通用户') }}</span>
                         </td>
                         <td>
                             <div class="action-group">
@@ -759,7 +760,8 @@
             pageSize: 10,
             filteredUserList: [],
             userLoading: false,
-            userActionLoading: null
+            userActionLoading: null,
+            currentRole: 0
         },
         computed: {
             pagedUserList() {
@@ -838,28 +840,27 @@
                     return false;
                 }
 
-                let role = this.getStoredRole();
-                if (role === null || Number.isNaN(role)) {
-                    try {
-                        const response = await axios.get('/api/user/current');
-                        const currentUser = response.data && response.data.data ? response.data.data : {};
-                        role = Number(currentUser.role);
-                        if (!Number.isNaN(role)) {
-                            localStorage.setItem('role', role);
-                            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-                            localStorage.setItem('userInfo', JSON.stringify(Object.assign({}, userInfo, { role })));
-                        }
-                    } catch (error) {
-                        console.error('管理员身份校验失败:', error);
-                        return false;
+                let role;
+                try {
+                    const response = await axios.get('/api/user/current');
+                    const currentUser = response.data && response.data.data ? response.data.data : {};
+                    role = Number(currentUser.role);
+                    if (!Number.isNaN(role)) {
+                        localStorage.setItem('role', role);
+                        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                        localStorage.setItem('userInfo', JSON.stringify(Object.assign({}, userInfo, { role })));
                     }
+                } catch (error) {
+                    console.error('管理员身份校验失败:', error);
+                    return false;
                 }
 
-                if (role !== 2) {
+                if (role !== 2 && role !== 3) {
                     alert('当前账号不是管理员，无法进入管理后台');
                     window.location.href = '/index.html';
                     return false;
                 }
+                this.currentRole = role;
                 return true;
             },
             async loadUsers() {
@@ -899,6 +900,11 @@
                 } catch (error) { alert(error.response?.data?.message || '重置失败'); }
             },
             async changeUserRole(user) {
+                if (this.currentRole !== 3) {
+                    user.role = user.raw.role;
+                    alert('只有超级管理员可以设置或撤销管理员');
+                    return;
+                }
                 const role = user.role;
                 if (!confirm(`确定将 ${user.username} 改为${role === 'ADMIN' ? '管理员' : '普通用户'}？`)) {
                     user.role = user.raw.role;
@@ -966,10 +972,11 @@
                     const endpoints = {
                         ban: '/api/admin/user/ban',
                         mute: '/api/admin/user/mute',
-                        unban: '/api/admin/user/unban'
+                        unban: '/api/admin/user/unban',
+                        unmute: '/api/admin/user/unmute'
                     };
                     const params = { id: user.id };
-                    if (action !== 'unban') {
+                    if (action === 'ban' || action === 'mute') {
                         params.timeType = timeType || 'permanent';
                     }
                     const response = await axios.post(endpoints[action], null, { params });
@@ -1047,7 +1054,7 @@
             },
             async muteUser(user){
                 if (user.isMuted) {
-                    await this.updateUserPunish(user, 'unban', `${user.username} 已解除禁言`);
+                    await this.updateUserPunish(user, 'unmute', `${user.username} 已解除禁言`);
                     return;
                 }
                 this.openPunishModal(user, 'mute');

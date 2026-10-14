@@ -47,6 +47,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/follows/**",
                         "/api/notifications/**",
                         "/api/messages/**",
+                        "/api/search/ai/**",
                         "/api/admin/**");
     }
 

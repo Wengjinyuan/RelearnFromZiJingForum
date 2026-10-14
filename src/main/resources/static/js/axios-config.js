@@ -2,6 +2,11 @@
 (function () {
     const client = axios.create({ timeout: 15000 });
     const toggles = new Map();
+    function roleCode(role) {
+        if (role === 'SUPER_ADMIN') return 3;
+        if (role === 'ADMIN') return 2;
+        return 0;
+    }
     function item(value) {
         if (!value || typeof value !== 'object') return value;
         const out = { ...value };
@@ -95,13 +100,17 @@
         }
         else if (old === '/api/post/management/list') {
             route(config, '/api/admin/posts');
-            config.params = { page: config.params?.pageNum || 1, size: config.params?.pageSize || 20 };
+            config.params = {
+                page: config.params?.pageNum || 1,
+                size: config.params?.pageSize || 20,
+                keyword: config.params?.keyword || undefined
+            };
         }
         else if ((m = old.match(/^\/api\/post\/management\/(\d+)(?:\/(top|essence))?$/))) {
             route(config, `/api/admin/posts/${m[1]}/${m[2] || 'delete'}`, 'put');
             config.data = { reason: '管理后台操作', enabled: config.params?.enabled };
         }
-        else if ((m = old.match(/^\/api\/admin\/user\/(ban|mute|unban)$/))) {
+        else if ((m = old.match(/^\/api\/admin\/user\/(ban|mute|unban|unmute)$/))) {
             const action = m[1];
             const days = Number(config.params?.timeType);
             route(config, `/api/admin/users/${config.params?.id}/${action}`, 'put');
@@ -150,9 +159,9 @@
         else if (old === '/api/home/getHotTags') data = (data || []).map(x => ({ name: x.name, tagName: x.name,
             count: x.used, used: x.used, hotScore: x.used }));
         else if (old === '/api/user/login' && data) data = { ...data.user, token: data.accessToken,
-            username: data.user.account, role: data.user.role === 'ADMIN' ? 2 : 0 };
+            username: data.user.account, role: roleCode(data.user.role) };
         else if (old === '/api/user/current' && data) data = { ...data, username: data.account,
-            role: data.role === 'ADMIN' ? 2 : 0 };
+            role: roleCode(data.role) };
         else if (old === '/api/notification/unreadCount') data = data?.count || 0;
         else if (/^\/api\/user\/follow\/status\//.test(old)) data = !!data?.following;
         else if (Array.isArray(data)) data = data.map(item);

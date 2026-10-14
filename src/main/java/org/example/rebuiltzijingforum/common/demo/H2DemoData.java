@@ -32,13 +32,14 @@ public class H2DemoData implements ApplicationRunner {
         try (Connection connection = dataSource.getConnection()) {
             if (!"H2".equalsIgnoreCase(connection.getMetaData().getDatabaseProductName())) return;
         }
+        long superAdmin = account("demo_super_admin", "demo_super_admin@example.test", "SUPER_ADMIN", "演示超级管理员");
         long admin = account("demo_admin", "demo_admin@example.test", "ADMIN", "演示管理员");
         long alice = account("demo_alice", "demo_alice@example.test", "USER", "小紫");
         long bob = account("demo_bob", "demo_bob@example.test", "USER", "小荆");
         post(alice, "学习交流", "欢迎来到紫荆论坛", "<p>这里可以交流课程、社团和校园生活。登录演示账号后，试试发帖、评论、点赞和关注。</p>", "新手指南", true);
         post(bob, "校园资讯", "本周校园活动推荐", "<p>欢迎在评论区分享你感兴趣的讲座、比赛和社团活动。</p>", "校园活动", false);
         post(alice, "二手交易", "闲置教材交换帖", "<p>有闲置教材的同学可以在评论区留言，约好地点后当面交换。</p>", "二手教材", false);
-        post(admin, "公告", "演示环境使用说明", "<p>这是本地 H2 演示数据。数据库保存在 data 目录，重新启动不会重复插入。</p>", "公告", false);
+        post(superAdmin, "公告", "演示环境使用说明", "<p>这是本地 H2 演示数据。数据库保存在 data 目录，重新启动不会重复插入。</p>", "公告", false);
         long welcome = id("SELECT id FROM post WHERE title=? AND author_id=?", "欢迎来到紫荆论坛", alice);
         if (count("SELECT COUNT(*) FROM comment WHERE post_id=? AND author_id=?", welcome, bob) == 0) {
             jdbc.update("INSERT INTO comment(post_id,author_id,content,like_count,deleted,created_at) VALUES(?,?,?,0,FALSE,?)",

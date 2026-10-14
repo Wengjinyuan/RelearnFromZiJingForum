@@ -22,7 +22,7 @@ flowchart TD
 
 ## 2. 用户搜一遍，方法怎么接
 
-`GET /api/search/posts?q=java&page=1&size=20&sort=relevance` → `SearchController.posts` 把 `q`（或 `keyword`）装成 `SearchDTO` → `SearchServiceImpl.posts` → `check`（关键词 1～100、size 1～100、offset 小于 10000、排序仅 `relevance/latest`）→ 如果 `ObjectProvider<SearchIndexService>` 有 bean，就试 `es.posts`；抛运行异常则记日志并回退 → `pattern` 把 `!/%/_` 转义，小写后经 `?` 参数绑定 → `SearchMapper.posts/countPosts` → `SearchHighlighter.highlight(title/summary)` → `PageResponse`。搜用户同样走 `users`，Mapper JOIN 资料表，高亮账号和昵称。
+`GET /api/search/posts?q=java&page=1&size=20&sort=relevance&category=学习交流` → `SearchController.posts` 把参数装成 `SearchDTO` → `SearchServiceImpl.posts` → `check`（关键词、分页、分类白名单以及 `relevance/latest/most_viewed/most_liked` 排序）→ 如果可用则试 ES，否则回退 MySQL → `pattern` 转义 LIKE 通配符 → `SearchMapper.posts/countPosts` 使用同一分类条件 → 安全高亮 → `PageResponse`。计数型排序直接走 MySQL，避免旧 ES 文档中的计数造成错误顺序。
 
 MySQL 回退保障 ES 停机时接口仍有基本搜索；`LIKE` 对大表、中文分词、相关性排序能力较弱。ES 使用倒排索引可改善全文检索，代价是多一份索引、网络和最终一致性。当前 mapping 用标准 analyzer，并不能声称已安装 IK 中文分词。深分页限制是保护，不等于已解决海量结果翻页；游标/search_after 是后续方向。
 
@@ -50,3 +50,9 @@ F01/F02/F03/F11 的相关写 Service 在数据库事务里调用 `SearchSyncServ
 ## 5. 实操与面试追问
 
 默认配置搜一篇新帖，试关键词 `%` 与 `_`，说明为什么不会匹配全站；搜被封禁用户和删除帖，核对 SQL 可见性。开 ES 后新建/编辑/删除帖子，分别查 MySQL、ES 和 API；停 ES 后请求应回退 SQL。再让 ES 在业务提交之后恢复，观察是否需要管理员重建。面试回答要区分“为什么选择 ES”（全文索引需求）、“为什么保留 MySQL”（事务真值和故障回退）和“当前缺陷”（增量同步不可靠、索引可能陈旧、中文分词未优化、深分页上限），不要承诺代码尚未提供的强一致性。
+
+## 6. AI 搜索不是“把问题直接丢给模型”
+
+原项目只在 POM/配置中引入 Spring AI DeepSeek，并在测试类调用一次 `DeepSeekChatModel.call`；没有 Controller、站内检索或来源约束，不能在面试中说成“原项目已实现 AI 搜索”。本重建版新增 `/api/search/ai/status` 与 `/api/search/ai`：模型先把问题改写成关键词和可选分类，复用普通搜索取最多 6 篇帖子，再把这些站内摘要作为上下文生成回答，来源返回给前端。论坛文本被明确视为不可信资料，提示词要求忽略其中指令，资料不足就拒绝编造。
+
+它默认关闭，密钥只从 `FORUM_AI_API_KEY` 读取。选择直接使用 JDK `HttpClient` 是为了只接一个 OpenAI 兼容接口而不额外绑定 Spring AI 快照版本；代价是重试、限流、可观测性和供应商抽象要自己补。当前已处理超时、非 2xx、空回答、模型改写 JSON 非法以及无检索结果，但没有做流式输出、响应缓存、token 成本预算、内容审核和调用级限流，这些是可继续追问的边界。

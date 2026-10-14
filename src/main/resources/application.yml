@@ -36,6 +36,11 @@ forum:
   redis:
     enabled: false
   search:
+    ai:
+      enabled: ${FORUM_AI_ENABLED:false}
+      url: ${FORUM_AI_URL:https://api.deepseek.com/chat/completions}
+      api-key: ${FORUM_AI_API_KEY:}
+      model: ${FORUM_AI_MODEL:deepseek-chat}
     elasticsearch:
       enabled: false
       url: ${FORUM_ES_URL:http://localhost:9200}

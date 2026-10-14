@@ -39,7 +39,7 @@
 
 - `account/email/mobile`：唯一登录标识，数据库 UNIQUE 是最终防线。
 - `password_hash`：只保存 BCrypt 结果，不保存原密码。
-- `role`：`USER/ADMIN`，只能由可信后端和管理功能修改。
+- `role`：`USER/ADMIN/SUPER_ADMIN`，只能由可信后端和管理功能修改；只有超级管理员能授予或撤销普通管理员。
 - `status`：`NORMAL/MUTED/BANNED`，登录和发内容时再次校验。
 - `token_version`：账号安全版本；改密、封禁等操作递增它。
 

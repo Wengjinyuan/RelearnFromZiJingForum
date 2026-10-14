@@ -358,24 +358,27 @@
             },
             mounted() {
                 const urlParams = new URLSearchParams(window.location.search);
-                let userId = urlParams.get('userId');
-
-                if (!userId || userId === 'null' || userId === '') {
-                    userId = localStorage.getItem('userId');
-                }
-
-                this.userId = userId;
-
-                if (!this.userId || this.userId === 'null') {
-                    this.showToast('请先登录', 'error');
+                const requestedUserId = urlParams.get('userId');
+                if (!localStorage.getItem('token')) {
+                    window.location.href = '../login.html?redirect=' + encodeURIComponent(location.pathname + location.search);
                     return;
                 }
-
-                this.getUserInfo();
-                axios.get('/api/accounts/me/contact').then(response => {
+                axios.get('/api/user/current').then(response => {
+                    const currentUserId = response.data.data?.id;
+                    if (!currentUserId) throw new Error('无法识别当前用户');
+                    this.userId = String(currentUserId);
+                    if (requestedUserId && String(requestedUserId) !== this.userId) {
+                        this.showToast('只能修改自己的资料，已切换到本人资料', 'error');
+                    }
+                    window.history.replaceState(null, '', `edit-profile.html?userId=${encodeURIComponent(this.userId)}`);
+                    this.getUserInfo();
+                    return axios.get('/api/accounts/me/contact');
+                }).then(response => {
                     this.form.email = response.data.data.email || '';
                     this.form.mobile = response.data.data.mobile || '';
-                }).catch(() => {});
+                }).catch(() => {
+                    this.showToast('登录状态无效，请重新登录', 'error');
+                });
             },
 
             /*

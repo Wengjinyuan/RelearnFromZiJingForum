@@ -64,15 +64,28 @@ class FeatureFlowApiTest {
                 .andExpect(status().isOk());
         mvc.perform(post("/api/interactions/posts/{id}/view", post)).andExpect(status().isOk());
         mvc.perform(put("/api/follows/{id}", alice).header("Authorization", bearer(b))).andExpect(status().isOk());
-        mvc.perform(get("/api/follows/users/{id}/followers", alice)).andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(1));
+        mvc.perform(get("/api/follows/users/{id}/followers", alice)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].account").value("flow_bob"));
         mvc.perform(get("/api/follows/feed").header("Authorization", bearer(b)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(1));
         mvc.perform(get("/api/search/posts?keyword=Java")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(1))
                 .andExpect(jsonPath("$.data.items[0].titleHighlight").value("<em>Java</em> 入门"));
+        mvc.perform(get("/api/search/posts?keyword=Java&category=学习交流&sort=most_liked"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].category").value("学习交流"));
+        mvc.perform(get("/api/search/posts?keyword=Java&category=社团活动"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(0));
         mvc.perform(get("/api/search/users?keyword=flow_alice")).andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(1));
         mvc.perform(get("/api/home")).andExpect(status().isOk()).andExpect(jsonPath("$.data.posts").value(1));
         mvc.perform(get("/api/home/hot-tags")).andExpect(status().isOk());
+        mvc.perform(get("/api/posts?sort=active")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].id").value(post));
+        mvc.perform(get("/api/posts?sort=hot")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].id").value(post));
+        mvc.perform(get("/api/search/ai/status").header("Authorization", bearer(a)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.available").value(false));
         mvc.perform(get("/api/notifications/unread-count").header("Authorization", bearer(a)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.count").value(4));
         mvc.perform(get("/api/notifications").header("Authorization", bearer(a)))
@@ -102,7 +115,7 @@ class FeatureFlowApiTest {
         mvc.perform(get("/api/posts/{id}/comments", second)).andExpect(jsonPath("$.data.total").value(0));
     }
 
-    /** F04 完整链路：图片校验/入库、根评论一次装配回复、软删除清空原文和图片。 */
+    /** F04 完整链路：图片校验/入库、根评论一次装配回复、软删除后整棵树不再返回。 */
     @Test
     void commentPreviewImagesAndSoftDelete() throws Exception {
         register("comment_owner", "comment-owner@example.com");
@@ -132,11 +145,11 @@ class FeatureFlowApiTest {
         mvc.perform(delete("/api/comments/{id}", root).header("Authorization", bearer(reader)))
                 .andExpect(status().isNoContent());
         mvc.perform(get("/api/posts/{id}/comments", postId)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[0].content").value("该评论已删除"))
-                .andExpect(jsonPath("$.data.items[0].imageUrls.length()").value(0))
-                .andExpect(jsonPath("$.data.items[0].replies[0].content").value("回复"));
-        org.junit.jupiter.api.Assertions.assertEquals(1L, db.queryForObject("SELECT comment_count FROM post WHERE id=?", Long.class, postId));
+                .andExpect(jsonPath("$.data.total").value(0))
+                .andExpect(jsonPath("$.data.items.length()").value(0));
+        org.junit.jupiter.api.Assertions.assertEquals(0L, db.queryForObject("SELECT comment_count FROM post WHERE id=?", Long.class, postId));
         org.junit.jupiter.api.Assertions.assertNotNull(db.queryForObject("SELECT deleted_at FROM comment WHERE id=?", java.time.LocalDateTime.class, root));
+        org.junit.jupiter.api.Assertions.assertEquals(2L, db.queryForObject("SELECT COUNT(*) FROM comment WHERE (id=? OR root_id=?) AND deleted=TRUE", Long.class, root, root));
     }
 
     /** F11 到期禁言在发帖前即时解除，而且状态、处罚历史、审计三处一致。 */
@@ -202,6 +215,28 @@ class FeatureFlowApiTest {
         }
     }
 
+    /** 资料写接口不接受 URL 中的他人 id，只能使用登录令牌里的当前用户。 */
+    @Test
+    void profileUpdateCannotModifyAnotherUser() throws Exception {
+        long alice = register("profile_alice", "profile-alice@example.com");
+        long bob = register("profile_bob", "profile-bob@example.com");
+        db.update("INSERT INTO user_profile(user_id, display_name, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
+                alice, "Alice原名");
+        String bobToken = login("profile_bob");
+        String aliceBefore = db.queryForObject("SELECT display_name FROM user_profile WHERE user_id=?", String.class, alice);
+        String body = "{\"displayName\":\"Bob的新名字\",\"gender\":\"UNKNOWN\",\"signature\":\"只改本人\",\"major\":\"计算机\",\"birthday\":null}";
+        mvc.perform(put("/api/profiles/{id}", alice).header("Authorization", bearer(bobToken))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isMethodNotAllowed());
+        mvc.perform(put("/api/profiles/me").header("Authorization", bearer(bobToken))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.userId").value(bob));
+        org.junit.jupiter.api.Assertions.assertEquals(aliceBefore,
+                db.queryForObject("SELECT display_name FROM user_profile WHERE user_id=?", String.class, alice));
+        org.junit.jupiter.api.Assertions.assertEquals("Bob的新名字",
+                db.queryForObject("SELECT display_name FROM user_profile WHERE user_id=?", String.class, bob));
+    }
+
     /** 验证 F10/F11：私信隔离、重复发送去重、管理员角色和禁言。 */
     @Test
     void messagesAndAdminChecks() throws Exception {
@@ -218,6 +253,10 @@ class FeatureFlowApiTest {
                 .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isOk());
         mvc.perform(get("/api/messages/conversations").header("Authorization", bearer(b)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].unreadCount").value(1));
+        mvc.perform(get("/api/messages/unread-count").header("Authorization", bearer(b)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.count").value(1));
+        mvc.perform(get("/api/notifications/unread-count").header("Authorization", bearer(b)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.count").value(1));
         mvc.perform(get("/api/messages/conversations/{id}", conversation).header("Authorization", bearer(b)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(1));
         mvc.perform(get("/api/messages/conversations/{id}", conversation).header("Authorization", bearer(root)))
@@ -226,8 +265,15 @@ class FeatureFlowApiTest {
                 .andExpect(status().isOk());
         mvc.perform(get("/api/messages/conversations").header("Authorization", bearer(b)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].unreadCount").value(0));
+        mvc.perform(get("/api/messages/unread-count").header("Authorization", bearer(b)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.count").value(0));
+        mvc.perform(get("/api/notifications/unread-count").header("Authorization", bearer(b)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.count").value(0));
         mvc.perform(get("/api/admin/users").header("Authorization", bearer(a))).andExpect(status().isForbidden());
         mvc.perform(get("/api/admin/users").header("Authorization", bearer(root))).andExpect(status().isOk());
+        mvc.perform(put("/api/admin/users/{id}/role", bob).header("Authorization", bearer(root))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"ADMIN\"}"))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("SUPER_ADMIN_FORBIDDEN"));
         mvc.perform(put("/api/admin/users/{id}/mute", alice).header("Authorization", bearer(root))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"刷屏\",\"expiresAt\":\"2099-01-01T00:00:00\"}"))
                 .andExpect(status().isOk());
@@ -243,6 +289,13 @@ class FeatureFlowApiTest {
                 .content("{\"category\":\"学习交流\",\"title\":\"待审核\",\"content\":\"内容足够阅读\",\"tags\":[]}"))
                 .andExpect(status().isCreated()).andReturn());
         db.update("UPDATE post SET status='PENDING' WHERE id=?", pending);
+        mvc.perform(get("/api/admin/posts?keyword=审核").header("Authorization", bearer(root)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].id").value(pending));
+        mvc.perform(get("/api/admin/posts?keyword=足够阅读").header("Authorization", bearer(root)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(1));
+        mvc.perform(get("/api/admin/posts?keyword=完全不存在").header("Authorization", bearer(root)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(0));
         mvc.perform(put("/api/admin/posts/{id}/approve", pending).header("Authorization", bearer(root))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"内容正常\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.status").value("PUBLISHED"));

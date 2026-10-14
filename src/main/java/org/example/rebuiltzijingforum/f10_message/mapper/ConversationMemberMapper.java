@@ -38,4 +38,9 @@ public class ConversationMemberMapper {
                 WHERE conversation_id=? AND user_id=?
                 """, conversationId, conversationId, userId);
     }
+
+    /** 顶部“消息”红点：汇总当前用户所有会话的未读数，而不是混用点赞、评论等通知数。 */
+    public long unreadCount(long userId) {
+        return db.queryForObject("SELECT COALESCE(SUM(unread_count),0) FROM conversation_member WHERE user_id=?", Long.class, userId);
+    }
 }
