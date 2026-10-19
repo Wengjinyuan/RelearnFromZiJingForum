@@ -22,7 +22,8 @@ public class FeatureCatalogController {
             new FeatureView("F08", "search", "帖子与用户搜索"),
             new FeatureView("F09", "home", "首页统计与热门标签"),
             new FeatureView("F10", "message", "私信"),
-            new FeatureView("F11", "admin", "后台用户与帖子治理"));
+            new FeatureView("F11", "admin", "后台用户与帖子治理"),
+            new FeatureView("F12", "media", "本地与阿里云 OSS 图片存储"));
 
     @GetMapping
     public ApiResponse<List<FeatureView>> list() {
@@ -32,4 +33,3 @@ public class FeatureCatalogController {
     public record FeatureView(String id, String packageName, String responsibility) {
     }
 }
-

@@ -20,6 +20,8 @@ flowchart TD
 
 ## 2. 写入链：理解事务与标签关系
 
+**POST `/api/posts/images`**：富文本编辑器发 multipart → F01 `AuthenticationInterceptor` 验证 JWT 并写可信 `CurrentUserDTO` → `PostImageController.upload` → F12 `ImageStorage.store(file, POST, userId)` → `ImageValidator` → 本地盘或 OSS → 返回 wangEditor 的 `errno/data.url` 结构。服务端生成 `posts/yyyy/MM/uuid.ext`，不使用客户端文件名。这一步只得到 URL，真正发帖时 URL 才进入正文。
+
 **POST `/api/posts`**：`PostController.createPost` → `PostServiceImpl.createPost` → `PostingPermission.requireCanPost`（F11 禁言）→ `validateCategory` → `sanitizeAndValidateContent`（`HtmlUtils.sanitize`）→ 从正文得 `summary/firstImage` → `PostMapper.insert`，作者、状态与计数由服务端确定 → `replaceTags` → `normalizeTags` → `findOrCreateTag` → `TagMapper` / `PostTagMapper` → 可选 `SearchSyncService.postChanged` → `toDetail` → `loadTagNames` → 201。`findOrCreateTag` 在唯一键并发插入冲突后重读已有标签。整个数据库写链在 Service 事务中。
 
 **PUT `/api/posts/{postId}`**：`updatePost` → `PostingPermission.requireCanPost` → `requireVisiblePost` → `ensureOwnerOrAdmin`（真实作者或管理员）→ 类目和正文校验 → `PostMapper.updateById` → `replaceTags` 计算旧/新标签、更新关联与使用量 → F08 同步通知 → `toDetail/loadTagNames`。编辑不是前端直接提交整个 `PostEntity`，敏感列不会由 JSON 任意覆盖。
@@ -58,4 +60,4 @@ flowchart TD
 
 MySQL 中帖子与标签是权威状态；ES 只是可选搜索副本。编辑先提交 MySQL，再尝试同步索引，故索引可能短时间旧；当前同步失败仅记录日志，没有可靠的增量重试队列，应通过重建索引修复。HTML 清理降低脚本注入风险，但图片地址是否可信、富文本展示的前端处理仍需单独核查。计数字段是派生值，并发更新靠 SQL 原子增减及事务，跨功能长期对账机制尚需补充。
 
-练习：从 `PostApiTest` 跑“发帖 → 列表 → 编辑 → 详情 → 删除”；在 `replaceTags` 处观察旧/新集合；用普通用户编辑他人帖子和被禁言用户发帖，记录状态码；删除后再走 F08 搜索及 F04 评论，比较读口径。画出 `post`、`tag`、`post_tag` 三表关系，并解释为何标签不能直接存成一个逗号字符串。
+练习：先上传一张图并在浏览器读回 URL，再从 `PostApiTest` 跑“发帖 → 列表 → 编辑 → 详情 → 删除”；在 `replaceTags` 处观察旧/新集合；用普通用户编辑他人帖子和被禁言用户发帖，记录状态码；删除后再走 F08 搜索及 F04 评论，比较读口径。画出 `post`、`tag`、`post_tag` 三表关系，并解释为何标签不能直接存成一个逗号字符串。

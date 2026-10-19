@@ -53,6 +53,8 @@ F01/F02/F03/F11 的相关写 Service 在数据库事务里调用 `SearchSyncServ
 
 ## 6. AI 搜索不是“把问题直接丢给模型”
 
-原项目只在 POM/配置中引入 Spring AI DeepSeek，并在测试类调用一次 `DeepSeekChatModel.call`；没有 Controller、站内检索或来源约束，不能在面试中说成“原项目已实现 AI 搜索”。本重建版新增 `/api/search/ai/status` 与 `/api/search/ai`：模型先把问题改写成关键词和可选分类，复用普通搜索取最多 6 篇帖子，再把这些站内摘要作为上下文生成回答，来源返回给前端。论坛文本被明确视为不可信资料，提示词要求忽略其中指令，资料不足就拒绝编造。
+原项目只在 POM/配置中引入 Spring AI DeepSeek，并在测试类调用一次 `DeepSeekChatModel.call`；没有 Controller、站内检索或来源约束，不能在面试中说成“原项目已实现 AI 搜索”。本重建版的真实链是：搜索页 `POST /api/search/ai` → `AiSearchController.answer` → `AiSearchServiceImpl.answer` → `AiChatClient.complete` 改写关键词/分类 → `SearchService.posts` 复用普通站内搜索取最多 6 篇帖子 → `AiChatClient.complete` 只根据摘要生成回答 → 答案与 `sources` 一起返回。`DeepSeekAiChatClient` 只管 OpenAI 兼容 HTTP，业务编排不与供应商细节绑死。论坛文本被明确视为不可信资料，提示词要求忽略其中指令，资料不足就拒绝编造。
 
-它默认关闭，密钥只从 `FORUM_AI_API_KEY` 读取。选择直接使用 JDK `HttpClient` 是为了只接一个 OpenAI 兼容接口而不额外绑定 Spring AI 快照版本；代价是重试、限流、可观测性和供应商抽象要自己补。当前已处理超时、非 2xx、空回答、模型改写 JSON 非法以及无检索结果，但没有做流式输出、响应缓存、token 成本预算、内容审核和调用级限流，这些是可继续追问的边界。
+它默认关闭，密钥只从 `FORUM_AI_API_KEY` 读取。JDK `HttpClient` 只放在 `DeepSeekAiChatClient`，有连接和请求超时；非 2xx、空回答和解析异常都转为不泄露上游内容的 `AI_SEARCH_UNAVAILABLE` 503。改写 JSON 非法时退回原问题；无站内来源时不再请求模型回答。尚未做流式输出、响应缓存、token 成本预算、内容审核和调用级限流。
+
+`/langchian/index.html` 是独立学习实验，走 `POST /ai/ask` → `AiController` → LangChain4j `ChatModel.chat`，由 `forum.learning-ai.enabled` 独立控制并使用独立密钥。它不搜论坛、不返回来源，不能当作 F08 正式 AI 搜索；默认关闭时 Controller 和模型 Bean 都不创建。

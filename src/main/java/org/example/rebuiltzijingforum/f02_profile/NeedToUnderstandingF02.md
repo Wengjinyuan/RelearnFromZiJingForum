@@ -1,6 +1,6 @@
 # F02 从代码学个人资料：一次请求经过哪些方法
 
-本文件解释当前 `f02_profile` 的**已实现代码**。建议在 IDEA 里同时打开 `ProfileController`、`ProfileServiceImpl`、`UserProfileMapper` 和 `AvatarFileUtils`，按下列箭头逐个跳转。`GUIDE.md` 是功能清单，这里讲运行流程与边界。
+本文件解释当前 `f02_profile` 的**已实现代码**。建议在 IDEA 里同时打开 `ProfileController`、`ProfileServiceImpl`、`UserProfileMapper` 和 F12 `ImageStorage`，按下列箭头逐个跳转。`GUIDE.md` 是功能清单，这里讲运行流程与边界。
 
 ## 1. 数据先认清
 
@@ -12,7 +12,7 @@ flowchart LR
     C --> S[ProfileService 接口 / ProfileServiceImpl]
     S --> M[UserProfileMapper: MyBatis-Plus BaseMapper]
     M --> DB[(user_profile)]
-    S --> F[AvatarFileUtils / 磁盘]
+    S --> F[F12 ImageStorage / 本地或 OSS]
     S -.启用 ES 时.-> X[F08 SearchSyncService]
     S --> V[ProfileVO] --> HTTP
 ```
@@ -29,9 +29,9 @@ flowchart LR
 
 ### POST `/api/profiles/me/avatar`：上传头像
 
-`ProfileController.uploadOwnAvatar` 接收 multipart 文件 → `ProfileServiceImpl.uploadOwnAvatar` 先 `selectById`（缺资料直接 404）→ `AvatarFileUtils.validate` 检查非空、20 MB 上限、允许的 MIME 和 `ImageIO` 可解码 → `generateFileName` 生成按用户目录隔离的随机名 → 创建目录并 `transferTo` → `updateById` 写 `avatarUrl` → 返回 URL 字符串，Controller 包成 `ApiResponse<String>` 并给 HTTP 201。上传流程没有 F08 同步调用。磁盘写入先于数据库提交，失败清理和旧文件回收并不完整。
+`ProfileController.uploadOwnAvatar` 接收 multipart 文件 → `ProfileServiceImpl.uploadOwnAvatar` 先 `selectById`（缺资料时创建默认行）→ F12 `ImageStorage.store(file, AVATAR, userId)` → `ImageValidator` 检查非空、20 MiB 上限、MIME 和真实图片字节 → 服务端生成 `avatars/{userId}/uuid.ext` → 写本地盘或 OSS → `updateById` 写 `avatarUrl` → 返回 URL，Controller 包成 `ApiResponse<String>` 并给 HTTP 201。
 
-当前文件保存根目录为 `update/avatars`，返回 URL 使用 `/upload/avatar/`；而 `generateFileName` 已含 `userId/`，Service 拼返回 URL 时又拼了用户 ID。请实际核对静态资源映射与返回 URL：代码目前不能据此证明“上传后 URL 一定可访问”，这也是值得动手修的练习。
+文件写入与数据库不是同一事务。Service 使用 `TransactionSynchronization`：提交后删旧图，回滚后删新图。本地 URL 统一为 `/uploads/...`，`WebMvcConfig` 映射到 `forum.storage.local-root`；OSS 返回配置的 CDN/公网 URL。详细边界看 F12 `NeedToUnderstandingF12.md`。
 
 ## 3. 方法间的职责索引
 
@@ -42,14 +42,14 @@ flowchart LR
 | `ProfileServiceImpl.updateOwnProfile` | Controller | 写当前用户资料；可选通知 F08 |
 | `ProfileServiceImpl.uploadOwnAvatar` | Controller | 校验文件、存磁盘、更新资料 URL |
 | `ProfileServiceImpl.createDefaultProfile` | `getProfile/updateOwnProfile` | 构造默认实体，调用 Mapper 插入 |
-| `AvatarFileUtils.validate/generateFileName` | 上传 Service | 内容校验、随机文件名；不负责数据库事务 |
+| `ImageStorage.store/delete/objectKeyFromUrl` | 上传 Service | F12 校验、存储、URL 与补偿删除 |
 | `UserProfileMapper.selectById/insert/updateById` | Service | MyBatis-Plus 提供的主键 SQL 操作 |
 
 ## 4. 为什么这样分层、有什么缺口
 
 Controller 只处理 HTTP；Service 管“谁能改”和文件/数据库的执行顺序；Mapper 管资料行。随机文件名避免原始文件名覆盖与路径注入，图片解码检查比只看扩展名强，但 MIME 与真实格式未严格绑定，也没有图片重编码。资料写在 MySQL 是权威数据；ES 若启用，只是搜索副本。
 
-未解决的问题包括：读请求创建资料、并发首次创建的主键冲突、文件与数据库不原子、旧头像累积、返回路径与保存路径不一致。现阶段小数据量可能使磁盘垃圾不明显，却不会使路径错误消失。解决方向是“注册时创建资料或按需无副作用返回默认值”、唯一键冲突后重读、先存临时文件并在事务完成后清理/发布、统一 URL 映射与文件根目录；这些是**改进建议，不是当前已经实现**。
+仍未解决的问题包括：读请求创建资料、并发首次创建的主键冲突、进程在文件写入后立刻崩溃造成孤儿文件、清理失败只记日志。路径与旧头像常规回收已修正，但补偿不等于跨 MySQL/OSS 的原子事务。
 
 ## 5. 自己跟一次与验证
 

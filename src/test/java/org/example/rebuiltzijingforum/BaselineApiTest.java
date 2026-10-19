@@ -26,12 +26,14 @@ class BaselineApiTest {
     }
 
     @Test
-    void featureCatalogContainsElevenSlices() throws Exception {
+    void featureCatalogContainsTwelveSlices() throws Exception {
         mockMvc.perform(get("/api/features"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(11))
+                .andExpect(jsonPath("$.data.length()").value(12))
                 .andExpect(jsonPath("$.data[0].id").value("F01"))
-                .andExpect(jsonPath("$.data[10].id").value("F11"));
+                .andExpect(jsonPath("$.data[10].id").value("F11"))
+                .andExpect(jsonPath("$.data[11].id").value("F12"))
+                .andExpect(jsonPath("$.data[11].packageName").value("media"));
     }
 }
 /**
