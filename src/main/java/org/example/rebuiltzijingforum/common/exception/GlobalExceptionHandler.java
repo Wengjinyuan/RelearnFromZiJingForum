@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -42,6 +43,12 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.failure("METHOD_NOT_ALLOWED", "该接口不支持此请求方法"));
     }
 
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(NoResourceFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.failure("NOT_FOUND", "请求的资源不存在"));
+    }
+
     /**
      * 处理未被前面两这响应的异常
      * @param exception
@@ -53,4 +60,3 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.failure("INTERNAL_ERROR", "服务器内部错误"));
     }
 }
-

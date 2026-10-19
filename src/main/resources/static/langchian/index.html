@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="独立的 LangChain4j 学习对话页面">
+    <title>LangChain4j 学习实验室</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23176b4d'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3ELC%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="page-shell">
+    <header class="topbar">
+        <a class="brand" href="./index.html" aria-label="返回 LangChain4j 学习实验室首页">
+            <span class="brand-mark" aria-hidden="true">LC</span>
+            <span>
+                <strong>LangChain4j 学习实验室</strong>
+                <small>独立功能 · 不依赖论坛页面</small>
+            </span>
+        </a>
+        <div class="connection-status" id="connectionStatus" role="status">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span>等待提问</span>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <aside class="learning-panel" aria-label="学习提示">
+            <p class="eyebrow">LEARNING PATH</p>
+            <h1>从一次请求看懂<br>AI 对话链路</h1>
+            <p class="intro">
+                这个页面只负责收集问题并展示回答。真正调用大模型的代码仍在后端，API Key 不会进入浏览器。
+            </p>
+
+            <ol class="flow-list">
+                <li>
+                    <span>01</span>
+                    <div><strong>前端发送</strong><small>POST /ai/ask + JSON</small></div>
+                </li>
+                <li>
+                    <span>02</span>
+                    <div><strong>Controller 接收</strong><small>AiController.ask(question)</small></div>
+                </li>
+                <li>
+                    <span>03</span>
+                    <div><strong>模型生成</strong><small>ChatModel.chat(question)</small></div>
+                </li>
+                <li>
+                    <span>04</span>
+                    <div><strong>页面展示</strong><small>读取纯文本响应</small></div>
+                </li>
+            </ol>
+
+            <div class="endpoint-card">
+                <span>当前接口</span>
+                <code>POST /ai/ask</code>
+            </div>
+        </aside>
+
+        <section class="chat-panel" aria-label="AI 对话区">
+            <div class="chat-heading">
+                <div>
+                    <p class="eyebrow">PLAYGROUND</p>
+                    <h2>和模型聊一聊</h2>
+                </div>
+                <button class="text-button" id="clearButton" type="button">清空对话</button>
+            </div>
+
+            <div class="messages" id="messages" aria-live="polite" aria-label="对话记录">
+                <article class="message assistant-message">
+                    <div class="avatar" aria-hidden="true">AI</div>
+                    <div class="message-content">
+                        <span class="message-role">LangChain4j 助手</span>
+                        <p>你好！这里是一个独立的 LangChain4j 学习页面。你可以问我一个问题，再观察左侧展示的完整请求链路。</p>
+                    </div>
+                </article>
+            </div>
+
+            <div class="suggestions" aria-label="问题示例">
+                <button type="button" data-question="请用简单的语言解释什么是 LangChain4j">什么是 LangChain4j？</button>
+                <button type="button" data-question="Spring Boot 为什么要通过后端调用大模型，而不是前端直接调用？">为什么由后端调用？</button>
+                <button type="button" data-question="请给我一个学习 LangChain4j 的入门路线">给我一条学习路线</button>
+            </div>
+
+            <form class="composer" id="chatForm">
+                <label class="sr-only" for="questionInput">输入你的问题</label>
+                <textarea
+                    id="questionInput"
+                    name="question"
+                    rows="1"
+                    maxlength="1000"
+                    placeholder="输入问题，按 Enter 发送，Shift + Enter 换行"
+                    required
+                ></textarea>
+                <div class="composer-footer">
+                    <span class="character-count"><span id="characterCount">0</span>/1000</span>
+                    <button class="send-button" id="sendButton" type="submit">
+                        <span>发送问题</span>
+                        <span aria-hidden="true">↗</span>
+                    </button>
+                </div>
+            </form>
+            <p class="privacy-note">API Key 只从服务端环境变量读取，不会传给这个页面。</p>
+        </section>
+    </main>
+</div>
+
+<template id="messageTemplate">
+    <article class="message">
+        <div class="avatar" aria-hidden="true"></div>
+        <div class="message-content">
+            <span class="message-role"></span>
+            <p></p>
+        </div>
+    </article>
+</template>
+
+<script src="./app.js" defer></script>
+</body>
+</html>

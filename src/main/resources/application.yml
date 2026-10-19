@@ -31,6 +31,11 @@ spring:
 forum:
   demo-data:
     enabled: true
+  learning-ai:
+    enabled: ${FORUM_LEARNING_AI_ENABLED:false}
+    base-url: ${FORUM_LEARNING_AI_BASE_URL:https://api.deepseek.com/v1}
+    api-key: ${FORUM_LEARNING_AI_API_KEY:${Lang_Chian_Deepseek_API_Key:}}
+    model: ${FORUM_LEARNING_AI_MODEL:deepseek-flash}
   storage:
     type: ${FORUM_STORAGE_TYPE:local}
     local-root: ${FORUM_STORAGE_LOCAL_ROOT:./uploads}
