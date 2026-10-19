@@ -51,6 +51,8 @@ forum:
       url: ${FORUM_AI_URL:https://api.deepseek.com/chat/completions}
       api-key: ${FORUM_AI_API_KEY:}
       model: ${FORUM_AI_MODEL:deepseek-chat}
+      connect-timeout-seconds: ${FORUM_AI_CONNECT_TIMEOUT_SECONDS:5}
+      request-timeout-seconds: ${FORUM_AI_REQUEST_TIMEOUT_SECONDS:25}
     elasticsearch:
       enabled: false
       url: ${FORUM_ES_URL:http://localhost:9200}

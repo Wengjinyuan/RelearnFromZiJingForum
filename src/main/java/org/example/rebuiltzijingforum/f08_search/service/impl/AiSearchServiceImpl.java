@@ -4,24 +4,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.rebuiltzijingforum.common.api.PageResponse;
 import org.example.rebuiltzijingforum.common.exception.BusinessException;
+import org.example.rebuiltzijingforum.f08_search.config.AiSearchProperties;
 import org.example.rebuiltzijingforum.f08_search.dto.SearchDTO;
+import org.example.rebuiltzijingforum.f08_search.service.AiChatClient;
 import org.example.rebuiltzijingforum.f08_search.service.AiSearchService;
 import org.example.rebuiltzijingforum.f08_search.service.SearchService;
 import org.example.rebuiltzijingforum.f08_search.vo.AiSearchResponse;
 import org.example.rebuiltzijingforum.f08_search.vo.AiSearchSourceVO;
 import org.example.rebuiltzijingforum.f08_search.vo.AiSearchStatusVO;
 import org.example.rebuiltzijingforum.f08_search.vo.PostSearchVO;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -35,29 +30,21 @@ public class AiSearchServiceImpl implements AiSearchService {
 
     private final SearchService search;
     private final ObjectMapper json;
-    private final HttpClient http;
-    private final boolean enabled;
-    private final String apiKey;
-    private final String endpoint;
-    private final String model;
+    private final AiChatClient chat;
+    private final AiSearchProperties properties;
 
-    public AiSearchServiceImpl(SearchService search, ObjectMapper json,
-            @Value("${forum.search.ai.enabled:false}") boolean enabled,
-            @Value("${forum.search.ai.api-key:}") String apiKey,
-            @Value("${forum.search.ai.url:https://api.deepseek.com/chat/completions}") String endpoint,
-            @Value("${forum.search.ai.model:deepseek-chat}") String model) {
+    public AiSearchServiceImpl(SearchService search, ObjectMapper json, AiChatClient chat,
+                               AiSearchProperties properties) {
         this.search = search;
         this.json = json;
-        this.enabled = enabled;
-        this.apiKey = apiKey == null ? "" : apiKey.trim();
-        this.endpoint = endpoint;
-        this.model = model;
-        this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+        this.chat = chat;
+        this.properties = properties;
     }
 
     @Override
     public AiSearchStatusVO status() {
-        return new AiSearchStatusVO(enabled && !apiKey.isBlank(), "DeepSeek", model);
+        return new AiSearchStatusVO(properties.isEnabled() && !properties.getApiKey().isBlank(),
+                "DeepSeek", properties.getModel());
     }
 
     @Override
@@ -93,7 +80,7 @@ public class AiSearchServiceImpl implements AiSearchService {
                 回答使用简洁中文，不输出 HTML。
                 """;
         String prompt = "用户问题：\n" + question + "\n\n论坛检索结果：\n" + context;
-        return new AiSearchResponse(call(system, prompt, 700), rewrite.keyword(), rewrite.category(), sources);
+        return new AiSearchResponse(chat.complete(system, prompt, 700), rewrite.keyword(), rewrite.category(), sources);
     }
 
     private Rewrite rewrite(String question) {
@@ -104,7 +91,7 @@ public class AiSearchServiceImpl implements AiSearchService {
                 keyword 要保留最有区分度的名词，不要写完整句子。
                 """;
         try {
-            String raw = call(system, question, 120).trim()
+            String raw = chat.complete(system, question, 120).trim()
                     .replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", "");
             JsonNode node = json.readTree(raw);
             String keyword = node.path("keyword").asText(question).trim();
@@ -115,41 +102,6 @@ public class AiSearchServiceImpl implements AiSearchService {
         } catch (RuntimeException | java.io.IOException invalidModelOutput) {
             return new Rewrite(question, null);
         }
-    }
-
-    private String call(String system, String user, int maxTokens) {
-        try {
-            String body = json.writeValueAsString(Map.of(
-                    "model", model,
-                    "temperature", 0.1,
-                    "max_tokens", maxTokens,
-                    "messages", List.of(
-                            Map.of("role", "system", "content", system),
-                            Map.of("role", "user", "content", user))));
-            HttpRequest request = HttpRequest.newBuilder(URI.create(endpoint))
-                    .timeout(Duration.ofSeconds(25))
-                    .header("Authorization", "Bearer " + apiKey)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
-            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300)
-                throw new IllegalStateException("AI provider status " + response.statusCode());
-            String content = json.readTree(response.body()).path("choices").path(0)
-                    .path("message").path("content").asText("").trim();
-            if (content.isBlank()) throw new IllegalStateException("AI provider returned empty content");
-            return content;
-        } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            throw unavailable(interrupted);
-        } catch (Exception failure) {
-            throw unavailable(failure);
-        }
-    }
-
-    private BusinessException unavailable(Exception cause) {
-        return new BusinessException("AI_SEARCH_UNAVAILABLE",
-                "AI 搜索暂时不可用，请稍后重试", HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     private record Rewrite(String keyword, String category) {}
