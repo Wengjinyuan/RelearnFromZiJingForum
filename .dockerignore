@@ -1,0 +1,9 @@
+.git
+.idea
+.playwright-cli
+.env
+data
+target
+uploads
+*.iml
+*.log

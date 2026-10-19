@@ -7,3 +7,4 @@ logs/
 uploads/
 data/
 .playwright-cli/
+.env
