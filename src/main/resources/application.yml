@@ -31,6 +31,16 @@ spring:
 forum:
   demo-data:
     enabled: true
+  storage:
+    type: ${FORUM_STORAGE_TYPE:local}
+    local-root: ${FORUM_STORAGE_LOCAL_ROOT:./uploads}
+    oss:
+      endpoint: ${ALIYUN_OSS_ENDPOINT:}
+      region: ${ALIYUN_OSS_REGION:}
+      bucket: ${ALIYUN_OSS_BUCKET:}
+      access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:}
+      access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:}
+      public-base-url: ${ALIYUN_OSS_PUBLIC_BASE_URL:}
   rabbit:
     enabled: false
   redis:

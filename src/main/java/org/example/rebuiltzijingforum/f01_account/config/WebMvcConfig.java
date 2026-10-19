@@ -1,6 +1,7 @@
 package org.example.rebuiltzijingforum.f01_account.config;
 
 import org.example.rebuiltzijingforum.f01_account.interceptor.AuthenticationInterceptor;
+import org.example.rebuiltzijingforum.f12_media.config.StorageProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -16,13 +17,15 @@ import java.nio.file.Paths;
 public class WebMvcConfig implements WebMvcConfigurer {
 
     private final AuthenticationInterceptor authenticationInterceptor;
+    private final StorageProperties storageProperties;
 
     /**
      * 获取验证消息
      * @param authenticationInterceptor
      */
-    public WebMvcConfig(AuthenticationInterceptor authenticationInterceptor) {
+    public WebMvcConfig(AuthenticationInterceptor authenticationInterceptor, StorageProperties storageProperties) {
         this.authenticationInterceptor = authenticationInterceptor;
+        this.storageProperties = storageProperties;
     }
 
     /**
@@ -53,7 +56,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String location = Paths.get("uploads").toAbsolutePath().normalize().toUri().toString();
+        String location = Paths.get(storageProperties.getLocalRoot()).toAbsolutePath().normalize().toUri().toString();
         if (!location.endsWith("/")) location += "/";
         registry.addResourceHandler("/uploads/**").addResourceLocations(location);
     }

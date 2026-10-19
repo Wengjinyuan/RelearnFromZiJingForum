@@ -15,17 +15,17 @@ import org.example.rebuiltzijingforum.f02_profile.service.ProfileService;
 import org.example.rebuiltzijingforum.f02_profile.utils.AvatarFileUtils;
 import org.example.rebuiltzijingforum.f02_profile.vo.ProfileVO;
 import org.example.rebuiltzijingforum.f08_search.service.SearchSyncService;
+import org.example.rebuiltzijingforum.f12_media.model.ImageKind;
+import org.example.rebuiltzijingforum.f12_media.model.StoredImage;
+import org.example.rebuiltzijingforum.f12_media.service.ImageStorage;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.UUID;
-import java.nio.file.Paths;
 
 
 /**
@@ -39,11 +39,14 @@ public class ProfileServiceImpl implements ProfileService {
     private final UserProfileMapper userProfileMapper;
     private final UserAccountMapper userAccountMapper;
     private final ObjectProvider<SearchSyncService> searchSync;
+    private final ImageStorage imageStorage;
 
-    public ProfileServiceImpl(UserProfileMapper userProfileMapper, UserAccountMapper userAccountMapper, ObjectProvider<SearchSyncService> searchSync) {
+    public ProfileServiceImpl(UserProfileMapper userProfileMapper, UserAccountMapper userAccountMapper,
+                              ObjectProvider<SearchSyncService> searchSync, ImageStorage imageStorage) {
         this.userProfileMapper = userProfileMapper;
         this.userAccountMapper = userAccountMapper;
         this.searchSync = searchSync;
+        this.imageStorage = imageStorage;
     }
 
     /**
@@ -113,47 +116,46 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     @Transactional
     public String uploadOwnAvatar(CurrentUserDTO currentUserDTO, AvatarUploadDTO avatarUploadDTO) {
-        // TODO 1. 校验真实图片  2. 生成安全文件名  3. 保存  4. 更新 URL  5. 失败补偿与旧文件清理
         long userId = currentUserDTO.userId();
         MultipartFile file = avatarUploadDTO.file();
         UserProfileEntity entity = userProfileMapper.selectById(userId);
         if (entity == null) entity = createDefaultProfile(userId);
-        AvatarFileUtils.validate(file);
-//        String extension = getExtension(avatarUploadDTO, file);
-        String fileName = AvatarFileUtils.generateFileName(userId, file.getContentType());
-        Path avatarROOT = Paths.get(
-                "uploads",
-                "avatars"
-        ).toAbsolutePath().normalize();
-        Path targetPath = avatarROOT.resolve(fileName).normalize();
-        if (!targetPath.startsWith(avatarROOT)) {
-            throw new BusinessException("FILE_PATH_ERROR","头像保存路径不合法",HttpStatus.BAD_REQUEST);
+        String oldUrl = entity.getAvatarUrl();
+        StoredImage stored = imageStorage.store(file, ImageKind.AVATAR, userId);
+        boolean synchronizedTransaction = TransactionSynchronizationManager.isSynchronizationActive();
+        if (synchronizedTransaction) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_COMMITTED) deleteManagedUrl(oldUrl);
+                    else deleteKeyQuietly(stored.objectKey());
+                }
+            });
         }
-        try
-        {
-            Files.createDirectories(targetPath.getParent());
-            file.transferTo(targetPath.toFile());
-            String avatarURL =
-            "/uploads/avatars/" + fileName.replace('\\','/');
-
-            entity.setAvatarUrl(avatarURL);
+        try {
+            entity.setAvatarUrl(stored.url());
             entity.setUpdatedAt(LocalDateTime.now());
-            int updated = userProfileMapper.updateById(entity);
-            if(updated != 1){
-                Files.deleteIfExists(targetPath);
-                throw new BusinessException("AVATAR_UPDATE_FAIL","头像更新失败", HttpStatus.INTERNAL_SERVER_ERROR);
+            if (userProfileMapper.updateById(entity) != 1) {
+                throw new BusinessException("AVATAR_UPDATE_FAIL", "头像更新失败", HttpStatus.INTERNAL_SERVER_ERROR);
             }
-            return avatarURL;
+            if (!synchronizedTransaction) deleteManagedUrl(oldUrl);
+            return stored.url();
+        } catch (RuntimeException failure) {
+            if (!synchronizedTransaction) deleteKeyQuietly(stored.objectKey());
+            throw failure;
         }
-        catch (BusinessException exception)
-        {
-            throw exception;
-        }catch (Exception exception)
-        {
-            log.error("上传头像失败:{}",exception.getMessage(),exception);
-            throw new BusinessException("AVATAR_UPDATE_FAIL","头像上传失败,请稍后 再试",HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private void deleteManagedUrl(String url) {
+        imageStorage.objectKeyFromUrl(url).ifPresent(this::deleteKeyQuietly);
+    }
+
+    private void deleteKeyQuietly(String key) {
+        try {
+            imageStorage.delete(key);
+        } catch (RuntimeException cleanupFailure) {
+            log.warn("图片补偿清理失败, objectKey={}", key, cleanupFailure);
         }
-//       throw new UnsupportedOperationException("TODO: 完成头像上传");
     }
 
 //    private static String getExtension(AvatarUploadDTO avatarUploadDTO, MultipartFile file) {

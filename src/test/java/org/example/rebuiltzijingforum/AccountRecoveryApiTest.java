@@ -18,7 +18,7 @@ import java.nio.file.Paths;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@SpringBootTest(properties = "forum.storage.local-root=target/test-uploads")
 @AutoConfigureMockMvc
 @Sql(statements = {"DELETE FROM password_reset_request", "DELETE FROM admin_audit_log", "DELETE FROM user_profile", "DELETE FROM user_account"},
         executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
@@ -76,11 +76,16 @@ class AccountRecoveryApiTest {
         byte[] png = Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/JxQAAAAASUVORK5CYII=");
         String avatarUrl = null, postImageUrl = null;
         try {
+            mvc.perform(multipart("/api/posts/images")
+                    .file(new MockMultipartFile("file", "local.png", "image/png", png)))
+                    .andExpect(status().isUnauthorized());
+
             MvcResult avatar = mvc.perform(multipart("/api/profiles/me/avatar")
                     .file(new MockMultipartFile("file", "local.png", "image/png", png))
                     .header("Authorization", bearer(token)))
                     .andExpect(status().isCreated()).andReturn();
             avatarUrl = json.readTree(avatar.getResponse().getContentAsByteArray()).path("data").asText();
+            assertUnderTestUploadRoot(avatarUrl);
             mvc.perform(get(avatarUrl)).andExpect(status().isOk());
 
             MvcResult upload = mvc.perform(multipart("/api/posts/images")
@@ -88,6 +93,7 @@ class AccountRecoveryApiTest {
                     .header("Authorization", bearer(token)))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.errno").value(0)).andReturn();
             postImageUrl = json.readTree(upload.getResponse().getContentAsByteArray()).path("data").path("url").asText();
+            assertUnderTestUploadRoot(postImageUrl);
             mvc.perform(get(postImageUrl)).andExpect(status().isOk());
 
             String postBody = "{\"category\":\"学习交流\",\"title\":\"本地图片测试\",\"content\":\"<p>这是本地图片正文</p><img src='"
@@ -101,9 +107,20 @@ class AccountRecoveryApiTest {
                     .content("{\"content\":\"本地图片评论\",\"imageUrls\":[\"" + postImageUrl + "\"]}"))
                     .andExpect(status().isCreated()).andExpect(jsonPath("$.data.imageUrls[0]").value(postImageUrl));
         } finally {
-            if (avatarUrl != null) Files.deleteIfExists(Paths.get("." + avatarUrl));
-            if (postImageUrl != null) Files.deleteIfExists(Paths.get("." + postImageUrl));
+            if (avatarUrl != null) Files.deleteIfExists(testUploadPath(avatarUrl));
+            if (postImageUrl != null) Files.deleteIfExists(testUploadPath(postImageUrl));
         }
+    }
+
+    private void assertUnderTestUploadRoot(String url) {
+        org.assertj.core.api.Assertions.assertThat(testUploadPath(url))
+                .startsWith(Paths.get("target/test-uploads").toAbsolutePath().normalize())
+                .exists();
+    }
+
+    private java.nio.file.Path testUploadPath(String url) {
+        return Paths.get("target/test-uploads").toAbsolutePath().normalize()
+                .resolve(url.substring("/uploads/".length())).normalize();
     }
 
     private long register(String account, String email) throws Exception {
