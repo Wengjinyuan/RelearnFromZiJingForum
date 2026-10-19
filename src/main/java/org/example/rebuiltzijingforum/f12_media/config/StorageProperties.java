@@ -48,5 +48,19 @@ public class StorageProperties {
         public void setAccessKeySecret(String accessKeySecret) { this.accessKeySecret = accessKeySecret; }
         public String getPublicBaseUrl() { return publicBaseUrl; }
         public void setPublicBaseUrl(String publicBaseUrl) { this.publicBaseUrl = publicBaseUrl; }
+
+        public String resolvedPublicBaseUrl() {
+            String configured = trimTrailingSlash(publicBaseUrl);
+            if (!configured.isBlank()) return configured;
+            String host = endpoint == null ? "" : endpoint.trim()
+                    .replaceFirst("^https?://", "");
+            host = trimTrailingSlash(host);
+            return "https://" + bucket.trim() + "." + host;
+        }
+
+        private String trimTrailingSlash(String value) {
+            if (value == null) return "";
+            return value.trim().replaceFirst("/+$", "");
+        }
     }
 }
