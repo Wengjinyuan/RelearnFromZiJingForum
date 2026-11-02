@@ -73,11 +73,13 @@
         const loadingMessage = createLoadingMessage();
 
         try {
+            const token = localStorage.getItem("token");
             const response = await fetch(CHAT_ENDPOINT, {
                 method: "POST",
                 headers: {
                     "Accept": "text/plain",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify({ question })
             });

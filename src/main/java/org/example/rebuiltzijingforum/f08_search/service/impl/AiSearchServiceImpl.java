@@ -99,6 +99,8 @@ public class AiSearchServiceImpl implements AiSearchService {
             String category = node.path("category").isNull() ? null : node.path("category").asText(null);
             if (!CATEGORIES.contains(category)) category = null;
             return new Rewrite(keyword, category);
+        } catch (BusinessException providerFailure) {
+            throw providerFailure;
         } catch (RuntimeException | java.io.IOException invalidModelOutput) {
             return new Rewrite(question, null);
         }

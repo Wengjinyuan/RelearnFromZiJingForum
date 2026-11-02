@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     url: ${ZIJING_DB_URL:jdbc:mysql://mysql:3306/rebuilt_zijing_forum?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
-    username: ${ZIJING_DB_USERNAME:root}
+    username: ${ZIJING_DB_USERNAME:forum}
     password: ${ZIJING_DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:

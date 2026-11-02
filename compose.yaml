@@ -11,9 +11,9 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: mysql,docker
       ZIJING_DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-rebuilt_zijing_forum}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-      ZIJING_DB_USERNAME: root
-      ZIJING_DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      ZIJING_JWT_SECRET: ${ZIJING_JWT_SECRET}
+      ZIJING_DB_USERNAME: ${MYSQL_APP_USER:-forum}
+      ZIJING_DB_PASSWORD: ${MYSQL_APP_PASSWORD:?Set MYSQL_APP_PASSWORD in .env}
+      ZIJING_JWT_SECRET: ${ZIJING_JWT_SECRET:?Set ZIJING_JWT_SECRET in .env}
       FORUM_STORAGE_TYPE: ${FORUM_STORAGE_TYPE:-local}
       FORUM_STORAGE_LOCAL_ROOT: /app/uploads
       ALIYUN_OSS_ENDPOINT: ${ALIYUN_OSS_ENDPOINT:-}
@@ -35,7 +35,7 @@ services:
       FORUM_ES_ENABLED: ${FORUM_ES_ENABLED:-false}
       FORUM_ES_API_KEY: ${FORUM_ES_API_KEY:-}
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-forum}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-replace-me}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-}
     depends_on:
       mysql:
         condition: service_healthy
@@ -46,10 +46,12 @@ services:
     image: mysql:8.4.11
     restart: unless-stopped
     ports:
-      - "${MYSQL_PORT:-3306}:3306"
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-rebuilt_zijing_forum}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_USER: ${MYSQL_APP_USER:-forum}
+      MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?Set MYSQL_APP_PASSWORD in .env}
       TZ: Asia/Shanghai
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
     healthcheck:
@@ -66,7 +68,7 @@ services:
     profiles: ["redis", "full"]
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     command: ["redis-server", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -81,11 +83,11 @@ services:
     profiles: ["rabbit", "full"]
     restart: unless-stopped
     ports:
-      - "${RABBIT_PORT:-5672}:5672"
-      - "${RABBIT_MANAGEMENT_PORT:-15672}:15672"
+      - "127.0.0.1:${RABBIT_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBIT_MANAGEMENT_PORT:-15672}:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-forum}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-replace-me}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-}
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
@@ -99,7 +101,7 @@ services:
     profiles: ["search", "full"]
     restart: unless-stopped
     ports:
-      - "${ELASTICSEARCH_PORT:-9200}:9200"
+      - "127.0.0.1:${ELASTICSEARCH_PORT:-9200}:9200"
     environment:
       discovery.type: single-node
       xpack.security.enabled: "false"

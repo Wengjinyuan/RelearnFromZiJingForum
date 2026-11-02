@@ -8,7 +8,7 @@
 Copy-Item .env.example .env
 ```
 
-打开 `.env`，至少替换 `MYSQL_ROOT_PASSWORD` 和 `ZIJING_JWT_SECRET`。JWT secret 使用 32 字节以上的随机字符串。然后执行：
+打开 `.env`，填写 `MYSQL_ROOT_PASSWORD`、`MYSQL_APP_PASSWORD` 和 `ZIJING_JWT_SECRET`。这三个值留空时 Compose 会直接拒绝启动；JWT secret 使用 32 字节以上的随机字符串。应用使用 `MYSQL_APP_USER` 指定的普通账号访问数据库，不使用 root。然后执行：
 
 ```powershell
 docker compose up -d --build
@@ -16,7 +16,7 @@ docker compose ps
 Invoke-RestMethod http://localhost:8080/api/health
 ```
 
-应用对外端口由 `APP_PORT` 控制，默认为 `8080`。MySQL 使用 `mysql_data` volume，重建容器不会自动清空数据。
+应用对外端口由 `APP_PORT` 控制，默认为 `8080`。MySQL 使用 `mysql_data` volume，重建容器不会自动清空数据。MySQL 和可选中间件的宿主机端口只绑定 `127.0.0.1`，局域网或公网不能直接访问它们；容器之间仍通过 Compose 内部网络通信。
 
 ## 2. 可选中间件
 
@@ -27,7 +27,7 @@ Invoke-RestMethod http://localhost:8080/api/health
 docker compose --profile redis up -d --build
 ```
 
-RabbitMQ 使用 `--profile rabbit` 和 `FORUM_RABBIT_ENABLED=true`；Elasticsearch 使用 `--profile search` 和 `FORUM_ES_ENABLED=true`。一次启动全部容器可使用：
+RabbitMQ 使用 `--profile rabbit` 和 `FORUM_RABBIT_ENABLED=true`，启用前还必须填写 `RABBITMQ_PASSWORD`；Elasticsearch 使用 `--profile search` 和 `FORUM_ES_ENABLED=true`。一次启动全部容器可使用：
 
 ```powershell
 docker compose --profile full up -d --build

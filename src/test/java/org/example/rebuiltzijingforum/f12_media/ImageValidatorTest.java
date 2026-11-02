@@ -5,6 +5,9 @@ import org.example.rebuiltzijingforum.f12_media.service.ImageValidator;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,11 +30,16 @@ class ImageValidatorTest {
     }
 
     @Test
-    void acceptsWebpOnlyWhenRiffWebpSignatureExists() {
-        byte[] webp = {'R', 'I', 'F', 'F', 0, 0, 0, 0, 'W', 'E', 'B', 'P'};
+    void acceptsWebpOnlyWhenRiffSizeAndKnownImageChunkExist() {
+        byte[] webp = {'R', 'I', 'F', 'F', 12, 0, 0, 0, 'W', 'E', 'B', 'P',
+                'V', 'P', '8', ' ', 0, 0, 0, 0};
         var file = new MockMultipartFile("file", "demo.webp", "image/webp", webp);
 
         assertThat(validator.validate(file).extension()).isEqualTo("webp");
+
+        byte[] headerOnly = {'R', 'I', 'F', 'F', 4, 0, 0, 0, 'W', 'E', 'B', 'P'};
+        assertCode(new MockMultipartFile("file", "header.webp", "image/webp", headerOnly),
+                "FILE_TYPE_ERROR");
     }
 
     @Test
@@ -43,6 +51,16 @@ class ImageValidatorTest {
                 "FILE_TYPE_ERROR");
         assertCode(new MockMultipartFile("file", "fake.webp", "image/webp", "not a webp".getBytes()),
                 "FILE_TYPE_ERROR");
+    }
+
+    @Test
+    void rejectsSmallCompressedFilesWithDangerousPixelDimensions() throws Exception {
+        BufferedImage tooWide = new BufferedImage(8193, 1, BufferedImage.TYPE_BYTE_GRAY);
+        ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+        ImageIO.write(tooWide, "png", encoded);
+
+        assertCode(new MockMultipartFile("file", "wide.png", "image/png", encoded.toByteArray()),
+                "IMAGE_DIMENSIONS_TOO_LARGE");
     }
 
     private void assertCode(MockMultipartFile file, String expectedCode) {

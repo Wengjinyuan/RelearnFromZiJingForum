@@ -89,7 +89,7 @@ feature/
 
 ```powershell
 Copy-Item .env.example .env
-# 编辑 .env，替换 MySQL 密码和 32+ 字节 JWT secret
+# 编辑 .env，填写 root 密码、论坛数据库账号密码和 32+ 字节 JWT secret
 docker compose up -d --build
 docker compose ps
 ```

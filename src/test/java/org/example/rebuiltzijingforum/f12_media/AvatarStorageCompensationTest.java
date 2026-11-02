@@ -11,12 +11,17 @@ import org.example.rebuiltzijingforum.f08_search.service.SearchSyncService;
 import org.example.rebuiltzijingforum.f12_media.model.ImageKind;
 import org.example.rebuiltzijingforum.f12_media.model.StoredImage;
 import org.example.rebuiltzijingforum.f12_media.service.ImageStorage;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,6 +33,13 @@ class AvatarStorageCompensationTest {
     @Mock UserAccountMapper accounts;
     @Mock ObjectProvider<SearchSyncService> searchSync;
     @Mock ImageStorage storage;
+
+    @AfterEach
+    void clearTransactionSynchronization() {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
 
     @Test
     void deletesNewObjectWhenDatabaseUpdateFails() {
@@ -48,5 +60,59 @@ class AvatarStorageCompensationTest {
 
         verify(storage).delete("avatars/7/new.png");
         verify(storage, never()).delete("avatars/7/old.png");
+    }
+
+    @Test
+    void deletesOldObjectOnlyAfterTransactionCommit() {
+        prepareSuccessfulAvatarUpdate();
+        when(storage.objectKeyFromUrl("/uploads/avatars/7/old.png"))
+                .thenReturn(Optional.of("avatars/7/old.png"));
+        TransactionSynchronizationManager.initSynchronization();
+
+        service().uploadOwnAvatar(user(), avatar());
+
+        verify(storage, never()).delete(anyString());
+        synchronization().afterCompletion(TransactionSynchronization.STATUS_COMMITTED);
+        verify(storage).delete("avatars/7/old.png");
+        verify(storage, never()).delete("avatars/7/new.png");
+    }
+
+    @Test
+    void deletesNewObjectAndKeepsOldObjectAfterTransactionRollback() {
+        prepareSuccessfulAvatarUpdate();
+        TransactionSynchronizationManager.initSynchronization();
+
+        service().uploadOwnAvatar(user(), avatar());
+        synchronization().afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
+
+        verify(storage).delete("avatars/7/new.png");
+        verify(storage, never()).objectKeyFromUrl("/uploads/avatars/7/old.png");
+    }
+
+    private void prepareSuccessfulAvatarUpdate() {
+        UserProfileEntity profile = new UserProfileEntity();
+        profile.setUserId(7L);
+        profile.setAvatarUrl("/uploads/avatars/7/old.png");
+        when(profiles.selectById(7L)).thenReturn(profile);
+        when(storage.store(any(), eq(ImageKind.AVATAR), eq(7L)))
+                .thenReturn(new StoredImage("avatars/7/new.png", "/uploads/avatars/7/new.png"));
+        when(profiles.updateById(profile)).thenReturn(1);
+    }
+
+    private TransactionSynchronization synchronization() {
+        assertThat(TransactionSynchronizationManager.getSynchronizations()).hasSize(1);
+        return TransactionSynchronizationManager.getSynchronizations().get(0);
+    }
+
+    private ProfileServiceImpl service() {
+        return new ProfileServiceImpl(profiles, accounts, searchSync, storage);
+    }
+
+    private CurrentUserDTO user() {
+        return new CurrentUserDTO(7L, "alice", "USER");
+    }
+
+    private AvatarUploadDTO avatar() {
+        return new AvatarUploadDTO(new MockMultipartFile("file", "new.png", "image/png", new byte[]{1}));
     }
 }

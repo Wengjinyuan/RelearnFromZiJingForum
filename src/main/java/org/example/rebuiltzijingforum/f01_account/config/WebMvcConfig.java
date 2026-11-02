@@ -51,11 +51,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/notifications/**",
                         "/api/messages/**",
                         "/api/search/ai/**",
-                        "/api/admin/**");
+                        "/api/admin/**",
+                        "/ai/ask");
     }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        if (!"local".equalsIgnoreCase(storageProperties.getType())) return;
         String location = Paths.get(storageProperties.getLocalRoot()).toAbsolutePath().normalize().toUri().toString();
         if (!location.endsWith("/")) location += "/";
         registry.addResourceHandler("/uploads/**").addResourceLocations(location);
